@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+=======
 import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
 import RoleRoutes from './RoleRoutes'
@@ -160,3 +162,4 @@ function AppRoutes() {
 }
 
 export default AppRoutes
+>>>>>>> 789d4f79a549a5051fcbdb565e4bf8c7a85ee151
