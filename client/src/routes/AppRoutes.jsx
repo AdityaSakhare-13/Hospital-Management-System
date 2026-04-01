@@ -26,12 +26,12 @@ import RevenueDashboard from '../modules/roles/admin/RevenueDashboard'
 import AdminProfile from '../modules/roles/admin/AdminProfile'
 
 // Doctor
-// import DoctorLayout from '../modules/roles/doctor/DoctorLayout'
-// import DoctorDashboard from '../modules/roles/doctor/DoctorDashboard'
-// import DoctorAppointments from '../modules/roles/doctor/DoctorAppointments'
-// import PatientDetails from '../modules/roles/doctor/PatientDetails'
-// import MedicalRecords from '../modules/roles/doctor/MedicalRecords'
-// import Schedule from '../modules/roles/doctor/Schedule'
+import DoctorLayout from '../modules/roles/doctor/DoctorLayout'
+import DoctorDashboard from '../modules/roles/doctor/DoctorDashboard'
+import DoctorAppointments from '../modules/roles/doctor/DoctorAppointments'
+import PatientDetails from '../modules/roles/doctor/PatientDetails'
+import MedicalRecords from '../modules/roles/doctor/MedicalRecords'
+import Schedule from '../modules/roles/doctor/Schedule'
 
 import ReceptionLayout from '../modules/roles/reception/ReceptionLayout'
 import ReceptionDashboard from '../modules/roles/reception/ReceptionDashboard'
@@ -117,8 +117,8 @@ function AppRoutes() {
   </Route>
 </Route>
 
-      ── Doctor routes ──
-      {/* <Route element={<ProtectedRoute allowedRoles={['doctor']} />}>
+      {/* ── Doctor routes ── */}
+      { <Route element={<ProtectedRoute allowedRoles={['doctor']} />}>
         <Route element={<DoctorLayout />}>
           <Route path="/doctor" element={<Navigate to="/doctor/dashboard" replace />} />
           <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
@@ -127,7 +127,7 @@ function AppRoutes() {
           <Route path="/doctor/records" element={<MedicalRecords />} />
           <Route path="/doctor/schedule" element={<Schedule />} />
         </Route>
-      </Route> */}
+      </Route> }
 
       {/* ── Legacy shared dashboard (any authenticated role) ── */}
       <Route element={<ProtectedRoute />}>
