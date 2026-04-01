@@ -1,31 +1,38 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Users, Calendar, Clock, CreditCard } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const ReceptionDashboard = ({ patients = [], appointments = [], queue = [], bills = [] }) => {
 
-  // 📊 Dynamic Stats
+  const navigate = useNavigate();
+
+  // 📊 Stats with navigation
   const stats = useMemo(() => {
     return [
       {
         label: "Total Patients",
         value: patients.length,
         icon: Users,
+        path: "/reception/patients"
       },
       {
         label: "Appointments",
         value: appointments.length,
         icon: Calendar,
+        path: "/reception/appointments"
       },
       {
         label: "Queue",
         value: queue.length,
         icon: Clock,
+        path: "/reception/queue"
       },
       {
         label: "Revenue",
         value: `₹${bills.reduce((acc, b) => acc + Number(b.amount || 0), 0)}`,
         icon: CreditCard,
+        path: "/reception/billing"
       },
     ];
   }, [patients, appointments, queue, bills]);
@@ -43,7 +50,7 @@ const ReceptionDashboard = ({ patients = [], appointments = [], queue = [], bill
         </div>
 
         <div className="text-sm text-gray-500">
-          Welcome, Admin 👋
+          Welcome, Reception 👋
         </div>
       </div>
 
@@ -53,6 +60,7 @@ const ReceptionDashboard = ({ patients = [], appointments = [], queue = [], bill
           <motion.div
             key={i}
             whileHover={{ scale: 1.05 }}
+            onClick={() => navigate(item.path)}
             className="bg-white p-5 rounded-xl shadow border cursor-pointer"
           >
             <div className="flex justify-between items-center">
@@ -64,7 +72,7 @@ const ReceptionDashboard = ({ patients = [], appointments = [], queue = [], bill
         ))}
       </div>
 
-      {/* Main Grid */}
+      {/* Main Grid (OLD UI maintained) */}
       <div className="grid md:grid-cols-2 gap-6">
 
         {/* Recent Appointments */}
@@ -75,10 +83,7 @@ const ReceptionDashboard = ({ patients = [], appointments = [], queue = [], bill
             <p className="text-gray-500 text-sm">No appointments</p>
           ) : (
             appointments.slice(0, 5).map((a, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center border-b py-2"
-              >
+              <div key={i} className="flex justify-between items-center border-b py-2">
                 <div>
                   <p className="font-medium">{a.patientName}</p>
                   <p className="text-xs text-gray-500">
@@ -102,10 +107,7 @@ const ReceptionDashboard = ({ patients = [], appointments = [], queue = [], bill
             <p className="text-gray-500 text-sm">No patients in queue</p>
           ) : (
             queue.slice(0, 5).map((q, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center border-b py-2"
-              >
+              <div key={i} className="flex justify-between items-center border-b py-2">
                 <p>{q.name}</p>
                 <span className="text-xs text-blue-500">
                   {q.status}
@@ -123,10 +125,7 @@ const ReceptionDashboard = ({ patients = [], appointments = [], queue = [], bill
             <p className="text-gray-500 text-sm">No patients</p>
           ) : (
             patients.slice(0, 5).map((p, i) => (
-              <div
-                key={i}
-                className="flex justify-between border-b py-2"
-              >
+              <div key={i} className="flex justify-between border-b py-2">
                 <p>{p.name}</p>
                 <span className="text-xs text-gray-500">
                   {p.contact}
@@ -144,10 +143,7 @@ const ReceptionDashboard = ({ patients = [], appointments = [], queue = [], bill
             <p className="text-gray-500 text-sm">No bills generated</p>
           ) : (
             bills.slice(0, 5).map((b, i) => (
-              <div
-                key={i}
-                className="flex justify-between border-b py-2"
-              >
+              <div key={i} className="flex justify-between border-b py-2">
                 <p>{b.patientName}</p>
                 <span className="text-xs text-purple-600">
                   ₹{b.amount}
@@ -164,23 +160,24 @@ const ReceptionDashboard = ({ patients = [], appointments = [], queue = [], bill
         <h2 className="font-semibold mb-4">Quick Actions</h2>
 
         <div className="flex flex-wrap gap-3">
-          <button className="bg-blue-500 text-white px-4 py-2 rounded">
+          <button onClick={() => navigate("/reception/patients/add")} className="bg-blue-500 text-white px-4 py-2 rounded">
             Add Patient
           </button>
 
-          <button className="bg-green-500 text-white px-4 py-2 rounded">
+          <button onClick={() => navigate("/reception/appointments/book")} className="bg-green-500 text-white px-4 py-2 rounded">
             Book Appointment
           </button>
 
-          <button className="bg-purple-500 text-white px-4 py-2 rounded">
+          <button onClick={() => navigate("/reception/billing")} className="bg-purple-500 text-white px-4 py-2 rounded">
             Generate Bill
           </button>
 
-          <button className="bg-orange-500 text-white px-4 py-2 rounded">
+          <button onClick={() => navigate("/reception/queue")} className="bg-orange-500 text-white px-4 py-2 rounded">
             Manage Queue
           </button>
         </div>
       </div>
+
     </div>
   );
 };
