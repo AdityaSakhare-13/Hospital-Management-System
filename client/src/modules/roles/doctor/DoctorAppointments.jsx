@@ -119,3 +119,14 @@ function DoctorAppointments() {
 }
 
 export default DoctorAppointments
+=======
+import React from 'react'
+
+const DoctorAppointments = () => {
+  return (
+    <div>DoctorAppointments</div>
+  )
+}
+
+export default DoctorAppointments
+>>>>>>> 5b5c5409c8c20f28a2e3ac2faba6ab5b2da299a1

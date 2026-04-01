@@ -99,3 +99,14 @@ function PatientDetails() {
 }
 
 export default PatientDetails
+=======
+import React from 'react'
+
+const PatientDetails = () => {
+  return (
+    <div>PatientDetails</div>
+  )
+}
+
+export default PatientDetails
+>>>>>>> 5b5c5409c8c20f28a2e3ac2faba6ab5b2da299a1
