@@ -105,7 +105,7 @@ function AdminDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="lg:col-span-2 p-8 rounded-3xl bg-white border border-slate-100 shadow-sm"
+          className="lg:col-span-2 p-8 rounded-3xl bg-white border border-slate-100 shadow-sm flex flex-col"
         >
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -116,7 +116,7 @@ function AdminDashboard() {
               <ArrowUpRight size={18} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
             </button>
           </div>
-          <div className="h-56">
+          <div className="h-56 flex-1 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={appointmentData} barSize={28}>
                 <XAxis dataKey="day" tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -142,7 +142,7 @@ function AdminDashboard() {
             <h3 className="text-sm font-black text-slate-900 border-l-4 border-emerald-500 pl-3 uppercase tracking-widest">Revenue Split</h3>
             <p className="text-xs font-bold text-slate-400 pl-4 mt-0.5">By department</p>
           </div>
-          <div className="h-44">
+          <div className="h-44 flex-1 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={revenueData} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={6} dataKey="value">
@@ -175,7 +175,7 @@ function AdminDashboard() {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 outline-none focus:border-emerald-400 transition-all appearance-none min-w-[140px]"
+          className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 outline-none focus:border-emerald-400 transition-all appearance-none min-w-32"
         >
           <option value="">All Status</option>
           <option value="Active">Active</option>
