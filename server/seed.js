@@ -48,10 +48,10 @@ const seed = async () => {
         console.log(`🗑  Removed existing: ${u.email}`);
       }
 
-      const salt = await bcrypt.genSalt(10);
-      const hashed = await bcrypt.hash(u.password, salt);
+      // const salt = await bcrypt.genSalt(10);
+      // const hashed = await bcrypt.hash(u.password, salt);
 
-      await User.create({ ...u, password: hashed });
+     await User.create(u); // ✅ plain password
       console.log(`✅ Created [${u.role}] → ${u.email} / ${u.password}`);
     }
 

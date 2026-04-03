@@ -20,14 +20,18 @@ export const registerUser = async (userData) => {
 // Login user
 export const loginUser = async (credentials) => {
   try {
-    const response = await axios.post("/auth/login", credentials);
-    if (response.data.data.token) {
-      localStorage.setItem("token", response.data.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.data.user));
+    const response = await axios.post("/auth/login", credentials); // ✅ API call
+
+    const { token, user } = response.data.data;
+
+    if (token) {
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
     }
+
     return response.data;
   } catch (error) {
-    extractError(error)
+    extractError(error);
   }
 };
 

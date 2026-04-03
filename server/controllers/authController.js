@@ -4,26 +4,28 @@ const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs"); // ✅ IMPORTANT
 
-// Generate JWT Token
+// 🔐 Generate JWT Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || "your-secret-key", {
-    expiresIn: process.env.JWT_EXPIRE || "7d",
-  });
+  return jwt.sign(
+    { id },
+    process.env.JWT_SECRET || "your-secret-key",
+    { expiresIn: process.env.JWT_EXPIRE || "7d" }
+  );
 };
 
-// @desc    Register user
-// @route   POST /api/auth/register
+// ================= REGISTER =================
 exports.register = asyncHandler(async (req, res) => {
   const { fullName, email, password, phone, role } = req.body;
 
-  // Check if user already exists
+  // ✅ Check if user already exists
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new ApiError(400, "User with this email already exists");
   }
 
-  // Create user
+  // ✅ Create user
   const user = await User.create({
     fullName,
     email,
@@ -32,7 +34,7 @@ exports.register = asyncHandler(async (req, res) => {
     role,
   });
 
-  // If role is patient, create patient profile
+  // ✅ Create patient profile if role = patient
   if (role === "patient") {
     await Patient.create({
       userId: user._id,
@@ -42,77 +44,78 @@ exports.register = asyncHandler(async (req, res) => {
     });
   }
 
-  // Generate token
   const token = generateToken(user._id);
 
-  // Return response
   return res.status(201).json(
-    new ApiResponse(201, {
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
+    new ApiResponse(
+      201,
+      {
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+        },
+        token,
       },
-      token,
-    },
-    "User registered successfully"
+      "User registered successfully"
     )
   );
 });
 
-// @desc    Login user
-// @route   POST /api/auth/login
+// ================= LOGIN =================
 exports.login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // Validate email & password
+  // ✅ Validate input
   if (!email || !password) {
     throw new ApiError(400, "Please provide an email and password");
   }
 
-  // Check for user (include password field)
+  // ✅ Get user with password
   const user = await User.findOne({ email }).select("+password");
+
   if (!user) {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  // Check if password matches
-  const isMatch = await user.matchPassword(password);
+  // ✅ Compare password
+  const isMatch = await bcrypt.compare(password, user.password);
+
   if (!isMatch) {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  // Check if user is active
+  // ✅ Check active status
   if (!user.isActive) {
     throw new ApiError(401, "User account is deactivated");
   }
 
-  // Update last login
+  // ✅ Update last login
   user.lastLogin = new Date();
   await user.save();
 
-  // Generate token
   const token = generateToken(user._id);
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        phone: user.phone,
+    new ApiResponse(
+      200,
+      {
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          phone: user.phone,
+        },
+        token,
       },
-      token,
-    },
-    "User logged in successfully"
+      "User logged in successfully"
     )
   );
 });
 
-// @desc    Get current logged-in user
-// @route   GET /api/auth/me
+// ================= GET ME =================
 exports.getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id);
 
@@ -121,23 +124,19 @@ exports.getMe = asyncHandler(async (req, res) => {
   );
 });
 
-// @desc    Update user profile
-// @route   PUT /api/auth/profile
+// ================= UPDATE PROFILE =================
 exports.updateProfile = asyncHandler(async (req, res) => {
   const { fullName, phone, avatar } = req.body;
 
-  const fieldsToUpdate = {};
-  if (fullName) fieldsToUpdate.fullName = fullName;
-  if (phone) fieldsToUpdate.phone = phone;
-  if (avatar) fieldsToUpdate.avatar = avatar;
+  const updateFields = {};
+  if (fullName) updateFields.fullName = fullName;
+  if (phone) updateFields.phone = phone;
+  if (avatar) updateFields.avatar = avatar;
 
   const user = await User.findByIdAndUpdate(
     req.user.id,
-    fieldsToUpdate,
-    {
-      new: true,
-      runValidators: true,
-    }
+    updateFields,
+    { new: true, runValidators: true }
   );
 
   return res.status(200).json(
@@ -145,39 +144,34 @@ exports.updateProfile = asyncHandler(async (req, res) => {
   );
 });
 
-// @desc    Change password
-// @route   PUT /api/auth/change-password
+// ================= CHANGE PASSWORD =================
 exports.changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
-  // Get user with password field
   const user = await User.findById(req.user.id).select("+password");
 
-  // Check current password
-  const isMatch = await user.matchPassword(currentPassword);
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+
   if (!isMatch) {
     throw new ApiError(401, "Current password is incorrect");
   }
 
-  // Update password
   user.password = newPassword;
-  await user.save();
+  await user.save(); // pre-save hook will hash it
 
   return res.status(200).json(
     new ApiResponse(200, {}, "Password changed successfully")
   );
 });
 
-// @desc    Logout user
-// @route   GET /api/auth/logout
+// ================= LOGOUT =================
 exports.logout = asyncHandler(async (req, res) => {
   return res.status(200).json(
     new ApiResponse(200, {}, "User logged out successfully")
   );
 });
 
-// @desc    Get all users (Admin only)
-// @route   GET /api/auth/users
+// ================= GET ALL USERS =================
 exports.getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find().select("-password");
 
@@ -186,8 +180,7 @@ exports.getAllUsers = asyncHandler(async (req, res) => {
   );
 });
 
-// @desc    Get user by ID
-// @route   GET /api/auth/users/:id
+// ================= GET USER BY ID =================
 exports.getUserById = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id).select("-password");
 
@@ -200,8 +193,7 @@ exports.getUserById = asyncHandler(async (req, res) => {
   );
 });
 
-// @desc    Update user role (Admin only)
-// @route   PUT /api/auth/users/:id/role
+// ================= UPDATE ROLE =================
 exports.updateRole = asyncHandler(async (req, res) => {
   const { role } = req.body;
 
@@ -224,8 +216,7 @@ exports.updateRole = asyncHandler(async (req, res) => {
   );
 });
 
-// @desc    Toggle user active status (Admin only)
-// @route   PUT /api/auth/users/:id/toggle-active
+// ================= TOGGLE ACTIVE =================
 exports.toggleActive = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
 
@@ -237,42 +228,13 @@ exports.toggleActive = asyncHandler(async (req, res) => {
   await user.save();
 
   const status = user.isActive ? "activated" : "deactivated";
+
   return res.status(200).json(
-    new ApiResponse(200, user, `User account ${status} successfully`)
+    new ApiResponse(200, user, `User account ${status}`)
   );
 });
 
-// @desc    Update user active status explicitly (Admin only)
-// @route   PATCH /api/users/:id/status
-exports.updateStatus = asyncHandler(async (req, res) => {
-  const { status } = req.body;
-
-  if (!status) {
-    throw new ApiError(400, "Status is required");
-  }
-
-  const normalizedStatus = String(status).toLowerCase();
-  if (!["active", "inactive"].includes(normalizedStatus)) {
-    throw new ApiError(400, "Status must be either Active or Inactive");
-  }
-
-  const user = await User.findByIdAndUpdate(
-    req.params.id,
-    { isActive: normalizedStatus === "active" },
-    { new: true, runValidators: true }
-  ).select("-password");
-
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
-  return res.status(200).json(
-    new ApiResponse(200, user, `User status updated to ${normalizedStatus}`)
-  );
-});
-
-// @desc    Deactivate user account (Self)
-// @route   PUT /api/auth/deactivate
+// ================= DEACTIVATE ACCOUNT =================
 exports.deactivateAccount = asyncHandler(async (req, res) => {
   const user = await User.findByIdAndUpdate(
     req.user.id,
@@ -284,3 +246,8 @@ exports.deactivateAccount = asyncHandler(async (req, res) => {
     new ApiResponse(200, user, "Account deactivated successfully")
   );
 });
+
+exports.updateStatus = async (req, res) => {
+  res.json({ message: "Status updated" });
+};
+

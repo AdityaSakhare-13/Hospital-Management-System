@@ -12,12 +12,12 @@ const ROLE_HOME = {
 }
 
 // Demo accounts for internal use (no UI buttons)
-const DEMO_USERS = [
-  { role: 'admin',     email: 'admin@hms.com',     password: 'admin123',     fullName: 'Admin User'     },
-  { role: 'doctor',    email: 'doctor@hms.com',    password: 'doctor123',    fullName: 'Doctor User'    },
-  { role: 'patient',   email: 'patient@hms.com',   password: 'patient123',   fullName: 'Patient User'   },
-  { role: 'reception', email: 'reception@hms.com', password: 'reception123', fullName: 'Reception User' },
-]
+// const DEMO_USERS = [
+//   { role: 'admin',     email: 'admin@hms.com',     password: 'admin123',     fullName: 'Admin User'     },
+//   { role: 'doctor',    email: 'doctor@hms.com',    password: 'doctor123',    fullName: 'Doctor User'    },
+//   { role: 'patient',   email: 'patient@hms.com',   password: 'patient123',   fullName: 'Patient User'   },
+//   { role: 'reception', email: 'reception@hms.com', password: 'reception123', fullName: 'Reception User' },
+// ]
 
 function Login() {
   const navigate = useNavigate()
@@ -40,50 +40,56 @@ function Login() {
     const password = formData.password
 
     // 1. Check demo accounts
-    const demo = DEMO_USERS.find(d => d.email === email && d.password === password)
-    if (demo) {
-      localStorage.setItem('token', 'demo-token-' + demo.role)
-      localStorage.setItem('user', JSON.stringify({ id: `demo-${demo.role}`, fullName: demo.fullName, email: demo.email, role: demo.role, phone: '9000000000' }))
-      navigate(ROLE_HOME[demo.role], { replace: true })
-      return
-    }
+    // const demo = DEMO_USERS.find(d => d.email === email && d.password === password)
+    // if (demo) {
+    //   localStorage.setItem('token', 'demo-token-' + demo.role)
+    //   localStorage.setItem('user', JSON.stringify({ id: `demo-${demo.role}`, fullName: demo.fullName, email: demo.email, role: demo.role, phone: '9000000000' }))
+    //   navigate(ROLE_HOME[demo.role], { replace: true })
+    //   return
+    // }
 
     // 2. Check locally registered patients
-    const localUsers = JSON.parse(localStorage.getItem('pendingUsers') || '[]')
-    const localMatch = localUsers.find(u => u.email === email)
-    if (localMatch) {
-      if (localMatch.status === 'rejected') {
-        setError('Your account has been rejected. Contact the administrator.')
-        setLoading(false)
-        return
-      }
-      if (localMatch.password !== password) {
-        setError('Invalid credentials. Please try again.')
-        setLoading(false)
-        return
-      }
-      localStorage.setItem('token', 'token-' + localMatch.id)
-      localStorage.setItem('user', JSON.stringify({
-        id:       localMatch.id,
-        fullName: localMatch.fullName,
-        email:    localMatch.email,
-        role:     localMatch.assignedRole,
-        phone:    localMatch.phone,
-      }))
-      navigate(ROLE_HOME[localMatch.assignedRole] || '/patient/dashboard', { replace: true })
-      return
-    }
+    //  const localUsers = JSON.parse(localStorage.getItem('pendingUsers') || '[]')
+    // const localMatch = localUsers.find(u => u.email === email)
+    // if (localMatch) {
+    //   if (localMatch.status === 'rejected') {
+    //     setError('Your account has been rejected. Contact the administrator.')
+    //     setLoading(false)
+    //     return
+    //   }
+    //   if (localMatch.password !== password) {
+    //     setError('Invalid credentials. Please try again.')
+    //     setLoading(false)
+    //     return
+    //   }
+    //   localStorage.setItem('token', 'token-' + localMatch.id)
+    //   localStorage.setItem('user', JSON.stringify({
+    //     id:       localMatch.id,
+    //     fullName: localMatch.fullName,
+    //     email:    localMatch.email,
+    //     role:     localMatch.assignedRole,
+    //     phone:    localMatch.phone,
+    //   }))
+    //   navigate(ROLE_HOME[localMatch.assignedRole] || '/patient/dashboard', { replace: true })
+    //   return
+    // }
 
     // 3. Try real API
-    try {
-      const res  = await loginUser(formData)
-      const user = res?.data?.user
-      navigate(ROLE_HOME[user?.role] || '/login', { replace: true })
-    } catch (err) {
-      setError(err?.message || 'Invalid credentials. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+   try {
+  const res = await loginUser(formData);
+
+const { token, user } = res.data ? res.data : res; // safe
+
+  localStorage.setItem("token", token);
+  localStorage.setItem("user", JSON.stringify(user));
+
+  navigate(ROLE_HOME[user.role] || "/login", { replace: true });
+
+} catch (err) {
+  setError(err?.message || "Invalid credentials");
+} finally {
+  setLoading(false);
+}
   }
 
   return (
