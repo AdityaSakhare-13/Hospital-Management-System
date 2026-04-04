@@ -7,6 +7,7 @@ const queueSchema = new mongoose.Schema(
     token: {
       type: Number,
       required: true,
+      index: true, // 🔥 ADD (fast sorting)
     },
 
     // Patient reference (optional — can be a walk-in)
@@ -14,6 +15,7 @@ const queueSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Patient",
       default: null,
+      index: true, // 🔥 ADD
     },
 
     // Plain name for walk-in / unregistered patients
@@ -21,6 +23,7 @@ const queueSchema = new mongoose.Schema(
       type: String,
       required: [true, "Patient name is required"],
       trim: true,
+      index: true, // 🔥 ADD (search bar)
     },
 
     // Assigned doctor
@@ -28,6 +31,7 @@ const queueSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Doctor",
       default: null,
+      index: true, // 🔥 ADD
     },
 
     doctorName: {
@@ -38,6 +42,7 @@ const queueSchema = new mongoose.Schema(
     department: {
       type: String,
       trim: true,
+      index: true, // 🔥 ADD (filter)
     },
 
     // Status as shown in Reception UI
@@ -45,16 +50,31 @@ const queueSchema = new mongoose.Schema(
       type: String,
       enum: ["Waiting", "In Progress", "Done", "Skipped"],
       default: "Waiting",
+      index: true, // 🔥 ADD (filter fast)
+    },
+
+    // 🔥 ADD (priority queue support)
+    priority: {
+      type: String,
+      enum: ["normal", "urgent"],
+      default: "normal",
     },
 
     // When they joined the queue
     joinedAt: {
       type: Date,
       default: Date.now,
+      index: true,
     },
 
     // When their session started
     calledAt: {
+      type: Date,
+      default: null,
+    },
+
+    // 🔥 ADD (when completed)
+    completedAt: {
       type: Date,
       default: null,
     },
@@ -74,6 +94,7 @@ const queueSchema = new mongoose.Schema(
         d.setHours(0, 0, 0, 0);
         return d;
       },
+      index: true, // 🔥 ADD (dashboard filter)
     },
   },
   { timestamps: true }

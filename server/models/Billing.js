@@ -2,23 +2,26 @@ const mongoose = require("mongoose");
 
 const billingSchema = new mongoose.Schema(
   {
-    // Support both ObjectId ref AND plain string name (UI sends patient names directly)
+    // 🔥 Patient relation
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Patient",
       default: null,
+      index: true, // 🔥 ADD (fast query)
     },
 
-    // Plain text patient name — used when creating bills from RevenueDashboard
+    // Plain text patient name (UI support)
     patientName: {
       type: String,
       trim: true,
     },
 
+    // 🔥 Doctor relation
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Doctor",
       default: null,
+      index: true, // 🔥 ADD
     },
 
     amount: {
@@ -27,7 +30,6 @@ const billingSchema = new mongoose.Schema(
       min: [0, "Amount cannot be negative"],
     },
 
-    // Bill type as shown in the UI
     type: {
       type: String,
       enum: ["OPD", "IPD", "Lab", "Pharmacy"],
@@ -38,6 +40,7 @@ const billingSchema = new mongoose.Schema(
       type: String,
       enum: ["Paid", "Pending", "Overdue"],
       default: "Pending",
+      index: true, // 🔥 ADD (filter fast)
     },
 
     paymentMethod: {
@@ -54,6 +57,29 @@ const billingSchema = new mongoose.Schema(
     date: {
       type: Date,
       default: Date.now,
+      index: true, // 🔥 ADD (dashboard graph fast)
+    },
+
+    // 🔥 ADD (department-wise revenue graph)
+    department: {
+      type: String,
+      enum: [
+        "cardiology",
+        "neurology",
+        "orthopedic",
+        "dermatology",
+        "pediatric",
+        "general",
+        "other",
+      ],
+      default: "other",
+    },
+
+    // 🔥 ADD (expense/bill category tracking)
+    category: {
+      type: String,
+      enum: ["consultation", "test", "medicine", "surgery", "other"],
+      default: "consultation",
     },
 
     notes: {
