@@ -7,19 +7,25 @@ const expenseSchema = new mongoose.Schema(
       required: [true, "Item/Description is required"],
       trim: true,
     },
+
     category: {
       type: String,
       enum: ["Machine", "Equipment", "Furniture", "Other"],
       default: "Other",
+      index: true, // 🔥 ADD (filter fast)
     },
+
     amount: {
       type: Number,
       required: [true, "Amount is required"],
       min: [0, "Amount cannot be negative"],
     },
+
+    // 🔥 FIX (String → Date for graph & filter)
     date: {
-      type: String, // UI sends e.g., "2024-05-15"
+      type: Date,
       required: [true, "Date is required"],
+      index: true, // 🔥 ADD (dashboard graph fast)
     },
   },
   { timestamps: true }
