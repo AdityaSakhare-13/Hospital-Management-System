@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Search, Plus, Edit, Trash2, X, Clock, Star, AlertCircle } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, X, Clock, Star, AlertCircle, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import DoctorProfileModal from './DoctorProfileModal'
+import { getAllDoctors, createDoctor, updateDoctor, deleteDoctor } from '../../doctors/doctorApi'
 
 const SPECIALIZATIONS = ['Cardiology', 'Neurology', 'Orthopedics', 'Dermatology', 'Pediatrics', 'General Medicine']
 
@@ -17,7 +18,9 @@ const emptyForm = { name: '', specialization: '', experience: '', availability: 
 
 function DoctorManagement({ view }) {
   const navigate = useNavigate()
-  const [doctors, setDoctors]               = useState(initialDoctors)
+  const [doctors, setDoctors]               = useState([])
+  const [loading, setLoading]               = useState(true)
+  const [error, setError]                   = useState(null)
   const [search, setSearch]                 = useState('')
   const [specFilter, setSpecFilter]         = useState('All')
   const [isFormOpen, setIsFormOpen]         = useState(false)
@@ -26,6 +29,26 @@ function DoctorManagement({ view }) {
   const [selectedDoc, setSelectedDoc]       = useState(null)
   const [formData, setFormData]             = useState(emptyForm)
   const [message, setMessage]               = useState('')
+  const [isSaving, setIsSaving]             = useState(false)
+
+  // Fetch doctors
+  const fetchDoctors = async () => {
+    try {
+      setLoading(true)
+      const res = await getAllDoctors()
+      setDoctors(res.data || [])
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching doctors:', err)
+      setError('Failed to load doctors directory')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDoctors()
+  }, [])
 
   useEffect(() => {
     if (view === 'add') { setEditingDoc(null); setFormData(emptyForm); setIsFormOpen(true) }
@@ -44,24 +67,39 @@ function DoctorManagement({ view }) {
   const openAdd  = () => { setEditingDoc(null); setFormData(emptyForm); setIsFormOpen(true) }
   const openEdit = (doc) => { setEditingDoc(doc); setFormData({ ...doc }); setIsFormOpen(true) }
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
-    if (editingDoc) {
-      setDoctors(prev => prev.map(d => d.id === editingDoc.id ? { ...formData, id: editingDoc.id, patients: editingDoc.patients } : d))
-      setMessage('Doctor updated successfully')
-    } else {
-      setDoctors(prev => [...prev, { ...formData, id: `D-00${prev.length + 1}`, patients: 0 }])
-      setMessage('Doctor added successfully')
+    setIsSaving(true)
+    try {
+      if (editingDoc) {
+        await updateDoctor(editingDoc._id, formData)
+        setMessage('Doctor updated successfully')
+      } else {
+        await createDoctor(formData)
+        setMessage('Doctor added successfully')
+      }
+      setIsFormOpen(false)
+      fetchDoctors()
+      setTimeout(() => setMessage(''), 3000)
+    } catch (err) {
+      console.error('Error saving doctor:', err)
+      alert(err.message || 'Error saving doctor data')
+    } finally {
+      setIsSaving(false)
     }
-    setIsFormOpen(false)
-    setTimeout(() => setMessage(''), 3000)
   }
 
-  const confirmDelete = () => {
-    setDoctors(prev => prev.filter(d => d.id !== deleteCandidate.id))
-    setMessage('Doctor removed successfully')
-    setDeleteCandidate(null)
-    setTimeout(() => setMessage(''), 3000)
+  const confirmDelete = async () => {
+    try {
+      await deleteDoctor(deleteCandidate._id)
+      setMessage('Doctor removed successfully')
+      setDeleteCandidate(null)
+      fetchDoctors()
+      setTimeout(() => setMessage(''), 3000)
+    } catch (err) {
+      console.error('Error deleting doctor:', err)
+      alert(err.message || 'Error removing doctor')
+    }
   }
 
   return (
@@ -113,10 +151,23 @@ function DoctorManagement({ view }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filtered.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-20 text-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-emerald-500 mx-auto mb-2" />
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading physicians...</p>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-xs font-bold text-rose-400">
+                    {error}
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
                 <tr><td colSpan={6} className="px-6 py-12 text-center text-xs font-bold text-slate-400">No doctors found</td></tr>
               ) : filtered.map((doc, idx) => (
-                <motion.tr key={doc.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.03 }}
+                <motion.tr key={doc._id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.03 }}
                   className="hover:bg-emerald-50/20 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -124,7 +175,9 @@ function DoctorManagement({ view }) {
                         onClick={() => setSelectedDoc({ ...doc, dept: doc.specialization })}
                         className="h-10 w-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-black group-hover:bg-emerald-500 group-hover:text-white transition-all shrink-0 cursor-pointer"
                       >
-                        {doc.name.split(' ').slice(1).map(n => n[0]).join('')}
+                        {doc.name.startsWith('Dr.') 
+                          ? doc.name.split(' ').slice(1).map(n => n[0]).join('').toUpperCase() || 'D'
+                          : doc.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'D'}
                       </div>
                       <div>
                         <p className="text-sm font-black text-slate-900">{doc.name}</p>
@@ -225,7 +278,8 @@ function DoctorManagement({ view }) {
                   </div>
                   <div className="sm:col-span-2 flex justify-end gap-3 pt-4 border-t border-slate-100">
                     <button type="button" onClick={() => setIsFormOpen(false)} className="px-6 py-3 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all">Cancel</button>
-                    <button type="submit" className="px-8 py-3 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-all active:scale-95 shadow-lg">
+                    <button type="submit" disabled={isSaving} className="px-8 py-3 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-all active:scale-95 shadow-lg flex items-center gap-2">
+                      {isSaving && <Loader2 size={14} className="animate-spin" />}
                       {editingDoc ? 'Update' : 'Save'}
                     </button>
                   </div>

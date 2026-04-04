@@ -94,7 +94,9 @@ function DoctorProfileModal({ doctor, onClose }) {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
                 <div className="h-14 w-14 rounded-2xl bg-blue-500 text-white flex items-center justify-center text-2xl font-black shadow-md">
-                  {doctor.name.split(' ').slice(1).map(n => n[0]).join('')}
+                  {doctor.name.startsWith('Dr.') 
+                    ? (doctor.name.split(' ').slice(1).map(n => n[0]).join('').toUpperCase() || 'D')
+                    : (doctor.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'D')}
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-slate-900">{doctor.name}</h2>

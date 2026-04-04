@@ -11,17 +11,16 @@ exports.doctorValidator = [
     .notEmpty()
     .withMessage("Specialization is required"),
 
-  // Optional — not required by the DoctorManagement UI form
   body("qualification")
-    .optional()
+    .optional({ checkFalsy: true })
     .trim(),
 
-  // Accept both "5 Years" (string from UI) or plain number
   body("experience")
-    .optional()
+    .optional({ checkFalsy: true })
     .trim(),
 
   body("contact")
+    .trim()
     .notEmpty()
     .withMessage("Contact number is required"),
 
@@ -30,14 +29,13 @@ exports.doctorValidator = [
     .isEmail()
     .withMessage("Invalid email format"),
 
-  // Optional — not required by the DoctorManagement UI form
   body("fees")
-    .optional()
+    .optional({ checkFalsy: true })
     .isNumeric()
     .withMessage("Fees must be a number"),
 
   body("status")
-    .optional()
+    .optional({ checkFalsy: true })
     .isIn(["Active", "On Leave", "Inactive"])
     .withMessage("Status must be one of: Active, On Leave, Inactive"),
 ];
