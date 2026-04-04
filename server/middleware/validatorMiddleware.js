@@ -7,6 +7,9 @@ const validate = (req, res, next) => {
     return next();
   }
   
+  // 📝 LOG ERRORS FOR DEBUGGING
+  console.log("❌ Validation errors:", JSON.stringify(errors.array(), null, 2));
+
   const extractedErrors = [];
   errors.array().map((err) => extractedErrors.push({ [err.path]: err.msg }));
 

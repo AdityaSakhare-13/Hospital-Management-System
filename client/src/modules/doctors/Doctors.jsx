@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { Plus, Search, Filter, MoreVertical, Star, Clock, Phone, Mail, Edit, Trash2, X, User, AlertCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Search, Filter, MoreVertical, Star, Clock, Phone, Mail, Edit, Trash2, X, User, AlertCircle, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getAllDoctors, createDoctor, updateDoctor, deleteDoctor } from './doctorApi'
 
 // Mock Data based on the schema
 const initialDoctors = [
@@ -55,7 +56,9 @@ const specializations = [
 ]
 
 function Doctors() {
-  const [doctors, setDoctors] = useState(initialDoctors)
+  const [doctors, setDoctors] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [view, setView] = useState('list') // list, add or edit
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedSpec, setSelectedSpec] = useState('All')
@@ -63,6 +66,26 @@ function Doctors() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [deleteCandidate, setDeleteCandidate] = useState(null)
   const [editingDoctor, setEditingDoctor] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Fetch doctors
+  const fetchDoctors = async () => {
+    try {
+      setLoading(true)
+      const res = await getAllDoctors()
+      setDoctors(res.data || [])
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching doctors:', err)
+      setError('Could not load doctor records')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDoctors()
+  }, [])
 
   // Add/Edit Form State
   const [formData, setFormData] = useState({
@@ -101,29 +124,37 @@ function Doctors() {
     setActiveDropdown(null)
   }
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
-    if (editingDoctor) {
-      // Update
-      setDoctors(prev => prev.map(doc => doc.id === editingDoctor.id ? { ...formData } : doc))
-      alert('Doctor record updated successfully!')
-    } else {
-      // Add
-      const newDoc = {
-        ...formData,
-        id: `DOC-00${doctors.length + 1}`,
-        rating: 5.0,
+    setIsSaving(true)
+    try {
+      if (editingDoctor) {
+        await updateDoctor(editingDoctor._id, formData)
+        alert('Doctor record updated successfully!')
+      } else {
+        await createDoctor(formData)
+        alert('New doctor added successfully!')
       }
-      setDoctors(prev => [...prev, newDoc])
-      alert('New doctor added successfully!')
+      setIsFormOpen(false)
+      fetchDoctors()
+    } catch (err) {
+      console.error('Error saving doctor:', err)
+      alert(err.message || 'Error saving doctor data')
+    } finally {
+      setIsSaving(false)
     }
-    setIsFormOpen(false)
   }
 
-  const confirmDelete = () => {
-    setDoctors(prev => prev.filter(doc => doc.id !== deleteCandidate.id))
-    setDeleteCandidate(null)
-    alert('Doctor record deleted successfully!')
+  const confirmDelete = async () => {
+    try {
+      await deleteDoctor(deleteCandidate._id)
+      setDeleteCandidate(null)
+      fetchDoctors()
+      alert('Doctor record deleted successfully!')
+    } catch (err) {
+      console.error('Error deleting doctor:', err)
+      alert(err.message || 'Error deleting record')
+    }
   }
 
   return (
@@ -188,19 +219,34 @@ function Doctors() {
                   <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filteredDoctors.map((doc, idx) => (
+              <tbody className="divide-y divide-slate-50 text-center">
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-20 text-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-emerald-500 mx-auto mb-2" />
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Fetching records...</p>
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-xs font-black text-rose-400">
+                      {error}
+                    </td>
+                  </tr>
+                ) : filteredDoctors.map((doc, idx) => (
                   <motion.tr
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.03 }}
-                    key={doc.id}
+                    key={doc._id}
                     className="hover:bg-emerald-50/30 transition-colors group text-center"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="h-10 w-10 shrink-0 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-black group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                          {doc.name.split(' ').slice(1).map(n => n[0]).join('')}
+                          {doc.name.startsWith('Dr.') 
+                            ? (doc.name.split(' ').slice(1).map(n => n[0]).join('').toUpperCase() || 'D')
+                            : (doc.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'D')}
                         </div>
                         <div className="text-left">
                           <p className="text-sm font-black text-slate-900 leading-tight">{doc.name}</p>
@@ -446,8 +492,10 @@ function Doctors() {
                     </button>
                     <button
                       type="submit"
-                      className="px-8 py-3 rounded-xl text-white text-xs font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 bg-slate-900 shadow-slate-200 hover:bg-emerald-500"
+                      disabled={isSaving}
+                      className="px-8 py-3 rounded-xl text-white text-xs font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 bg-slate-900 shadow-slate-200 hover:bg-emerald-500 flex items-center gap-2"
                     >
+                      {isSaving && <Loader2 size={14} className="animate-spin" />}
                       {editingDoctor ? 'Update Records' : 'Save Record'}
                     </button>
                   </div>
