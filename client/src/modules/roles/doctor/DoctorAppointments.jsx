@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, CheckCircle2, Circle, AlertCircle, Clock, Filter, X, CalendarClock, Ban, Calendar, AlarmClock, FileText, Stethoscope, MoreVertical, Eye, User, Hash } from 'lucide-react'
+import { addScheduleEvent } from './scheduleStore'
 
 const INITIAL_APPOINTMENTS = [
   { id: 'A-101', patient: 'Rohan Sharma',  age: 34, date: '2024-06-13', time: '09:00 AM', type: 'OPD',          status: 'Completed'   },
@@ -534,7 +535,20 @@ function DoctorAppointments() {
           appointment={reschedule}
           onClose={() => setReschedule(null)}
           onConfirm={(form) => {
-            console.log('Rescheduled:', reschedule.id, form)
+            setAppointments(prev =>
+              prev.map(a => a.id === reschedule.id
+                ? { ...a, date: form.date, time: form.time, type: form.type, status: 'Scheduled' }
+                : a
+              )
+            )
+            addScheduleEvent({
+              id:    `E-${Date.now()}`,
+              date:  form.date,
+              type:  'appointment',
+              title: `${reschedule.patient} — ${form.type}`,
+              time:  form.time,
+              note:  form.reason || form.note || reschedule.patient,
+            })
             setReschedule(null)
           }}
         />
