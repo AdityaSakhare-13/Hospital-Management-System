@@ -46,10 +46,9 @@ const appointmentSchema = new mongoose.Schema(
         "Confirmed",
         "Cancelled",
         "Completed",
-        "no-show",
-        "rescheduled",
       ],
       default: "Pending",
+      index: true, // 🔥 ADD: filter fast
     },
 
     reason: {
