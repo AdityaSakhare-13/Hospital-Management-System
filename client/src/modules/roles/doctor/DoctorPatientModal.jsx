@@ -131,7 +131,182 @@ const MOCK = {
   ],
 }
 
-function CalendarTab({ events, onBookSurgery }) {
+const EMPTY_MED = { name: '', dose: '', freq: '', duration: '', instructions: '' }
+
+function PrescriptionTab({ patient }) {
+  const [prescriptions, setPrescriptions] = useState(MOCK.prescriptions)
+  const [showForm, setShowForm]           = useState(false)
+  const [medicines, setMedicines]         = useState([{ ...EMPTY_MED }])
+  const [notes, setNotes]                 = useState('')
+  const [error, setError]                 = useState('')
+
+  const updateMed = (i, field, val) =>
+    setMedicines(prev => prev.map((m, idx) => idx === i ? { ...m, [field]: val } : m))
+
+  const addMedRow = () => setMedicines(prev => [...prev, { ...EMPTY_MED }])
+
+  const removeMedRow = (i) => setMedicines(prev => prev.filter((_, idx) => idx !== i))
+
+  const handleSave = () => {
+    const filled = medicines.filter(m => m.name.trim())
+    if (!filled.length) { setError('Add at least one medicine.'); return }
+    const newRx = {
+      id:       `Rx-${String(prescriptions.length + 1).padStart(3, '0')}`,
+      date:     new Date().toISOString().slice(0, 10),
+      doctor:   'Dr. (You)',
+      medicines: filled,
+      notes,
+    }
+    setPrescriptions(prev => [newRx, ...prev])
+    setShowForm(false)
+    setMedicines([{ ...EMPTY_MED }])
+    setNotes('')
+    setError('')
+  }
+
+  const inputCls = 'w-full px-2.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-400 bg-white placeholder:text-slate-300'
+
+  return (
+    <div className="space-y-4">
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{prescriptions.length} prescription(s)</p>
+        <button
+          onClick={() => { setShowForm(v => !v); setError('') }}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+            showForm
+              ? 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+              : 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
+          }`}>
+          <Plus size={12} />{showForm ? 'Cancel' : 'Add Prescription'}
+        </button>
+      </div>
+
+      {/* Add Prescription Form */}
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            className="rounded-2xl border border-blue-100 bg-blue-50/40 overflow-hidden"
+          >
+            <div className="px-5 py-3 bg-blue-50 border-b border-blue-100 flex items-center gap-2">
+              <Pill size={13} className="text-blue-500" />
+              <p className="text-xs font-black text-blue-700">New Prescription — {patient.name}</p>
+            </div>
+
+            <div className="px-5 py-4 space-y-3">
+              {/* Medicine rows */}
+              <div className="space-y-2">
+                {/* Column headers */}
+                <div className="grid grid-cols-[2fr_1fr_1.5fr_1fr_1.5fr_auto] gap-2">
+                  {['Medicine', 'Dose', 'Frequency', 'Duration', 'Instructions', ''].map((h, i) => (
+                    <p key={i} className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{h}</p>
+                  ))}
+                </div>
+
+                {medicines.map((m, i) => (
+                  <div key={i} className="grid grid-cols-[2fr_1fr_1.5fr_1fr_1.5fr_auto] gap-2 items-center">
+                    <input value={m.name}         onChange={e => updateMed(i, 'name',         e.target.value)} placeholder="e.g. Metformin 500mg" className={inputCls} />
+                    <input value={m.dose}         onChange={e => updateMed(i, 'dose',         e.target.value)} placeholder="1 tablet"            className={inputCls} />
+                    <input value={m.freq}         onChange={e => updateMed(i, 'freq',         e.target.value)} placeholder="Twice daily"         className={inputCls} />
+                    <input value={m.duration}     onChange={e => updateMed(i, 'duration',     e.target.value)} placeholder="30 days"             className={inputCls} />
+                    <input value={m.instructions} onChange={e => updateMed(i, 'instructions', e.target.value)} placeholder="After meals"         className={inputCls} />
+                    <button onClick={() => removeMedRow(i)} disabled={medicines.length === 1}
+                      className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <button onClick={addMedRow}
+                className="flex items-center gap-1.5 text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-700 transition-colors">
+                <Plus size={11} /> Add Medicine
+              </button>
+
+              {/* Notes */}
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Notes / Instructions</label>
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+                  placeholder="e.g. Avoid high-sodium diet. Monitor BP weekly."
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-400 bg-white resize-none placeholder:text-slate-300" />
+              </div>
+
+              {error && <p className="text-[10px] font-black text-rose-500">{error}</p>}
+
+              <div className="flex gap-2 pt-1">
+                <button onClick={handleSave}
+                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-colors">
+                  <Check size={12} /> Save Prescription
+                </button>
+                <button onClick={() => { setShowForm(false); setError('') }}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Prescription list */}
+      {prescriptions.map((rx, i) => (
+        <motion.div key={rx.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
+          className="rounded-2xl border border-slate-100 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-100">
+            <div>
+              <p className="text-xs font-black text-slate-900">{rx.id}</p>
+              <p className="text-[10px] font-bold text-slate-400">{rx.doctor} • {rx.date}</p>
+            </div>
+            <Pill size={16} className="text-blue-400" />
+          </div>
+          <div className="divide-y divide-slate-50">
+            {rx.medicines.map((m, j) => (
+              <div key={j} className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5 py-3">
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Medicine</p>
+                  <p className="text-xs font-black text-slate-900">{m.name}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Dose</p>
+                  <p className="text-xs font-bold text-slate-700">{m.dose}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Frequency</p>
+                  <p className="text-xs font-bold text-slate-700">{m.freq} · {m.duration}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Instructions</p>
+                  <p className="text-xs font-bold text-blue-600">{m.instructions}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {rx.notes ? (
+            <div className="px-5 py-3 bg-amber-50 border-t border-amber-100">
+              <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">Notes</p>
+              <p className="text-xs font-bold text-amber-900">{rx.notes}</p>
+            </div>
+          ) : null}
+        </motion.div>
+      ))}
+
+      {prescriptions.length === 0 && (
+        <p className="text-center text-xs font-bold text-slate-400 py-8">No prescriptions yet.</p>
+      )}
+    </div>
+  )
+}
+
+function fmt12(time24) {
+  if (!time24) return ''
+  const [h, m] = time24.split(':').map(Number)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12  = h % 12 || 12
+  return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
+}
+
+function CalendarTab({ events, onBookSurgery, patient }) {
   const today = new Date()
   const [current, setCurrent] = useState({ year: today.getFullYear(), month: today.getMonth() })
   const [selected, setSelected] = useState(null)
@@ -155,20 +330,20 @@ function CalendarTab({ events, onBookSurgery }) {
 
   const handleSave = () => {
     if (!form.date || !form.time) return
-    const titles = { surgery: 'Schedule Procedure', appointment: 'Next Appointment' }
-    const typeMap = { surgery: 'procedure', appointment: 'upcoming' }
+    const titles  = { surgery: 'Schedule Procedure', appointment: 'Next Appointment' }
+    const typeMap  = { surgery: 'procedure', appointment: 'upcoming' }
+    const timeDisp = fmt12(form.time)
     const newEvent = {
       id: `E-${Date.now()}`, date: form.date, type: modal.type,
-      title: titles[modal.type], time: form.time, note: form.note,
+      title: titles[modal.type], time: timeDisp, note: form.note,
     }
     setLocalEvents(prev => [...prev, newEvent])
-    // push to shared schedule store
     addScheduleEvent({
       id:    newEvent.id,
       date:  newEvent.date,
       type:  typeMap[modal.type],
       title: `${patient.name} — ${titles[modal.type]}`,
-      time:  form.time,
+      time:  timeDisp,
       note:  form.note || patient.name,
     })
     if (modal.type === 'surgery' && onBookSurgery) {
@@ -544,46 +719,7 @@ function DoctorPatientModal({ patient, onClose, onBookSurgery }) {
 
             {/* PRESCRIPTION */}
             {activeTab === 'prescription' && (
-              <div className="space-y-6">
-                {MOCK.prescriptions.map((rx, i) => (
-                  <motion.div key={rx.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                    className="rounded-2xl border border-slate-100 overflow-hidden">
-                    <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-100">
-                      <div>
-                        <p className="text-xs font-black text-slate-900">{rx.id}</p>
-                        <p className="text-[10px] font-bold text-slate-400">{rx.doctor} • {rx.date}</p>
-                      </div>
-                      <Pill size={16} className="text-blue-400" />
-                    </div>
-                    <div className="divide-y divide-slate-50">
-                      {rx.medicines.map((m, j) => (
-                        <div key={j} className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5 py-3">
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Medicine</p>
-                            <p className="text-xs font-black text-slate-900">{m.name}</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Dose</p>
-                            <p className="text-xs font-bold text-slate-700">{m.dose}</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Frequency</p>
-                            <p className="text-xs font-bold text-slate-700">{m.freq} · {m.duration}</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Instructions</p>
-                            <p className="text-xs font-bold text-blue-600">{m.instructions}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="px-5 py-3 bg-amber-50 border-t border-amber-100">
-                      <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">Notes</p>
-                      <p className="text-xs font-bold text-amber-900">{rx.notes}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              <PrescriptionTab patient={patient} />
             )}
 
             {/* VITALS */}
@@ -615,7 +751,7 @@ function DoctorPatientModal({ patient, onClose, onBookSurgery }) {
 
             {/* CALENDAR */}
             {activeTab === 'calendar' && (
-              <CalendarTab events={MOCK.calendarEvents} onBookSurgery={(ev) => onBookSurgery && onBookSurgery({ ...ev, patient: patient.name })} />
+              <CalendarTab events={MOCK.calendarEvents} patient={patient} onBookSurgery={(ev) => onBookSurgery && onBookSurgery({ ...ev, patient: patient.name })} />
             )}
 
             {/* BILLING */}

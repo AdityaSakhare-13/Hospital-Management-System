@@ -149,8 +149,9 @@ function Schedule() {
   const [current, setCurrent]     = useState({ year: today.getFullYear(), month: today.getMonth() })
   const [selected, setSelected]   = useState(today.toISOString().slice(0, 10))
   const [events, setEvents]       = useState(() => [...SEED_EVENTS, ...getScheduleEvents()])
-  const [addModal, setAddModal]   = useState(false)
-  const [viewEvent, setViewEvent] = useState(null)
+  const [addModal, setAddModal]     = useState(false)
+  const [viewEvent, setViewEvent]   = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null) // event to delete
 
   // sync when DoctorPatientModal adds a new event
   useEffect(() => {
@@ -175,7 +176,11 @@ function Schedule() {
     setAddModal(false)
   }
 
-  const removeEvent = (id) => setEvents(prev => prev.filter(e => e.id !== id))
+  const removeEvent = (id) => {
+    setEvents(prev => prev.filter(e => e.id !== id))
+    setConfirmDelete(null)
+    setViewEvent(null)
+  }
 
   const todayStr = today.toISOString().slice(0, 10)
 
@@ -336,7 +341,7 @@ function Schedule() {
                       {e.note && <span className="text-[9px] font-bold text-slate-300 truncate">· {e.note}</span>}
                     </div>
                   </div>
-                  <button onClick={() => removeEvent(e.id)}
+                  <button onClick={() => setConfirmDelete(e)}
                     className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-400 transition-all shrink-0 mt-1">
                     <X size={12} />
                   </button>
@@ -429,7 +434,7 @@ function Schedule() {
                   className="flex-1 py-2 rounded-xl bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all">
                   Close
                 </button>
-                <button onClick={() => { removeEvent(viewEvent.id); setViewEvent(null) }}
+                <button onClick={() => setConfirmDelete(viewEvent)}
                   className="flex-1 py-2 rounded-xl bg-rose-500 text-white text-xs font-black uppercase tracking-widest hover:bg-rose-600 transition-all">
                   Delete Event
                 </button>
@@ -443,6 +448,48 @@ function Schedule() {
       <AnimatePresence>
         {addModal && (
           <AddEventModal date={selected} onClose={() => setAddModal(false)} onAdd={handleAdd} />
+        )}
+      </AnimatePresence>
+
+      {/* Confirm Delete Modal */}
+      <AnimatePresence>
+        {confirmDelete && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-sm mx-4 overflow-hidden"
+            >
+              <div className="px-6 pt-6 pb-4 flex flex-col items-center text-center gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+                  <AlertTriangle size={20} className="text-rose-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-slate-900">Cancel this event?</p>
+                  <p className="text-xs font-bold text-slate-400 mt-1 leading-relaxed">
+                    <span className={`font-black ${EVENT_TYPES[confirmDelete.type]?.text}`}>{confirmDelete.title}</span>
+                    <br />{confirmDelete.date} · {confirmDelete.time}
+                  </p>
+                </div>
+                <p className="text-[10px] font-bold text-slate-400">This action cannot be undone.</p>
+              </div>
+              <div className="flex gap-3 px-6 py-4 border-t border-slate-100">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all"
+                >
+                  Keep It
+                </button>
+                <button
+                  onClick={() => removeEvent(confirmDelete.id)}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-500 text-white text-xs font-black uppercase tracking-widest hover:bg-rose-600 transition-all"
+                >
+                  Yes, Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
