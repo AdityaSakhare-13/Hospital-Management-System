@@ -40,7 +40,7 @@ const fallbackPatients = [
   },
 ]
 
-const usePatients = () => {
+const usePatients = (shouldFetch = true) => {
   const [patients, setPatients] = useState([])
   const [message, setMessage] = useState('')
   const [isFallbackMode, setIsFallbackMode] = useState(false)
@@ -94,8 +94,10 @@ const usePatients = () => {
   }, [executeGetPatients])
 
   useEffect(() => {
-    fetchPatients().catch(() => null)
-  }, [fetchPatients])
+    if (shouldFetch) {
+      fetchPatients().catch(() => null)
+    }
+  }, [fetchPatients, shouldFetch])
 
   const savePatient = async (payload, editingId) => {
     if (isFallbackMode) {
