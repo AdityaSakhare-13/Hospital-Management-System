@@ -1,41 +1,33 @@
-const { body } = require("express-validator");
+const { body, param } = require("express-validator");
 
 exports.doctorValidator = [
   body("name")
     .trim()
     .notEmpty()
     .withMessage("Doctor name is required"),
-
   body("specialization")
-    .trim()
     .notEmpty()
     .withMessage("Specialization is required"),
-
-  body("qualification")
-    .optional({ checkFalsy: true })
-    .trim(),
-
   body("experience")
-    .optional({ checkFalsy: true })
-    .trim(),
-
+    .notEmpty()
+    .withMessage("Experience is required"),
+  body("availability")
+    .notEmpty()
+    .withMessage("Availability is required"),
   body("contact")
-    .trim()
     .notEmpty()
     .withMessage("Contact number is required"),
-
   body("email")
-    .optional({ checkFalsy: true })
     .isEmail()
-    .withMessage("Invalid email format"),
-
-  body("fees")
-    .optional({ checkFalsy: true })
-    .isNumeric()
-    .withMessage("Fees must be a number"),
-
+    .withMessage("Invalid email address"),
   body("status")
-    .optional({ checkFalsy: true })
+    .optional()
     .isIn(["Active", "On Leave", "Inactive"])
-    .withMessage("Status must be one of: Active, On Leave, Inactive"),
+    .withMessage("Invalid status"),
+];
+
+exports.doctorIdParamValidator = [
+  param("id")
+    .isMongoId()
+    .withMessage("Invalid doctor ID"),
 ];

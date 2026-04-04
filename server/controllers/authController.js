@@ -44,6 +44,17 @@ exports.register = asyncHandler(async (req, res) => {
     });
   }
 
+  // ✅ Create doctor profile if role = doctor
+  if (role === "doctor") {
+    await Doctor.create({
+      name: user.fullName,
+      email: user.email,
+      specialization: "General",
+      contact: user.phone,
+      status: "Active",
+    });
+  }
+
   const token = generateToken(user._id);
 
   return res.status(201).json(

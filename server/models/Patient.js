@@ -5,46 +5,46 @@ const patientSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null, // Keep for PatientDashboard functionality
     },
-    dateOfBirth: {
-      type: Date,
-      required: [true, "Date of birth is required"],
+    name: {
+      type: String,
+      required: [true, "Patient name is required"],
+      trim: true,
+    },
+    age: {
+      type: Number,
+      required: [true, "Age is required"],
     },
     gender: {
       type: String,
-      enum: ["male", "female", "other"],
+      enum: ["Male", "Female", "Other", "male", "female", "other"],
       required: [true, "Gender is required"],
+    },
+    contact: {
+      type: String,
+      required: [true, "Contact number is required"],
     },
     bloodGroup: {
       type: String,
       enum: ["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"],
       required: [true, "Blood group is required"],
     },
+    status: {
+      type: String,
+      enum: ["Active", "Admitted", "Discharged"],
+      default: "Active",
+    },
     address: {
-      street: String,
-      city: String,
-      state: String,
-      zipCode: String,
-      country: String,
+      type: String,
+      required: [true, "Address is required"],
     },
-    emergencyContact: {
-      name: String,
-      relationship: String,
-      phone: String,
+    medicalHistory: {
+      type: String, // UI sends a simple string or description
+      default: "No known conditions",
     },
-    allergies: [String], // List of allergies
-    medicalHistory: [String], // Previous medical conditions
-    insuranceProvider: String,
-    insuranceId: String,
-    insuranceExpiry: Date,
-    height: Number, // in cm
-    weight: Number, // in kg
-    notes: String,
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Patient", patientSchema);

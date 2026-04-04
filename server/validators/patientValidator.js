@@ -1,61 +1,42 @@
 const { body, param } = require("express-validator");
 
 exports.patientValidator = [
-  body("dateOfBirth")
-    .isISO8601()
-    .withMessage("Invalid date of birth format"),
+  body("name")
+    .trim()
+    .notEmpty()
+    .withMessage("Patient name is required"),
+  body("age")
+    .isNumeric()
+    .withMessage("Age must be a number"),
   body("gender")
-    .isIn(["male", "female", "other"])
-    .withMessage("Invalid gender"),
+    .notEmpty()
+    .withMessage("Gender is required"),
+  body("contact")
+    .notEmpty()
+    .withMessage("Contact number is required"),
   body("bloodGroup")
     .isIn(["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"])
     .withMessage("Invalid blood group"),
-  body("address.city")
-    .optional()
-    .trim()
+  body("address")
     .notEmpty()
-    .withMessage("City is required"),
-  body("address.state")
+    .withMessage("Address is required"),
+  body("status")
     .optional()
-    .trim()
-    .notEmpty()
-    .withMessage("State is required"),
-  body("address.zipCode")
+    .isIn(["Active", "Admitted", "Discharged"])
+    .withMessage("Invalid status"),
+  body("medicalHistory")
     .optional()
-    .trim()
-    .matches(/^[0-9]{5,6}$/)
-    .withMessage("Invalid zip code format"),
-  body("emergencyContact.phone")
-    .optional()
-    .isMobilePhone()
-    .withMessage("Invalid emergency contact phone"),
-  body("height")
-    .optional()
-    .isNumeric()
-    .withMessage("Height must be a number"),
-  body("weight")
-    .optional()
-    .isNumeric()
-    .withMessage("Weight must be a number"),
+    .isString(),
 ];
 
 exports.patientUpdateValidator = [
-  body("dateOfBirth")
-    .optional()
-    .isISO8601()
-    .withMessage("Invalid date of birth format"),
-  body("bloodGroup")
-    .optional()
-    .isIn(["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"])
-    .withMessage("Invalid blood group"),
-  body("height")
-    .optional()
-    .isNumeric()
-    .withMessage("Height must be a number"),
-  body("weight")
-    .optional()
-    .isNumeric()
-    .withMessage("Weight must be a number"),
+  body("name").optional().notEmpty(),
+  body("age").optional().isNumeric(),
+  body("gender").optional().notEmpty(),
+  body("contact").optional().notEmpty(),
+  body("bloodGroup").optional().isString(),
+  body("address").optional().notEmpty(),
+  body("status").optional().isIn(["Active", "Admitted", "Discharged"]),
 ];
 
 exports.patientIdParamValidator = [

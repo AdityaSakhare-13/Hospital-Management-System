@@ -15,6 +15,7 @@ const appointmentRoutes = require("./routes/appointmentRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const queueRoutes = require("./routes/queueRoutes");
 const userRoutes = require("./routes/userRoutes");
+const expenseRoutes = require("./routes/expenseRoutes");
 const errorHandler = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -39,6 +40,7 @@ app.use("/api/medicines", medicineRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/queue", queueRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/expenses", expenseRoutes);
 
 // Root/Health Check
 app.get("/", (req, res) => {
