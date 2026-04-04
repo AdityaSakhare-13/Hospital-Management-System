@@ -139,6 +139,7 @@ function PrescriptionTab({ patient }) {
   const [medicines, setMedicines]         = useState([{ ...EMPTY_MED }])
   const [notes, setNotes]                 = useState('')
   const [error, setError]                 = useState('')
+  const [confirmDel, setConfirmDel]       = useState(null) // rx to delete
 
   const updateMed = (i, field, val) =>
     setMedicines(prev => prev.map((m, idx) => idx === i ? { ...m, [field]: val } : m))
@@ -258,7 +259,14 @@ function PrescriptionTab({ patient }) {
               <p className="text-xs font-black text-slate-900">{rx.id}</p>
               <p className="text-[10px] font-bold text-slate-400">{rx.doctor} • {rx.date}</p>
             </div>
-            <Pill size={16} className="text-blue-400" />
+            <div className="flex items-center gap-2">
+              <Pill size={15} className="text-blue-400" />
+              <button
+                onClick={() => setConfirmDel(rx)}
+                className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all">
+                <X size={13} />
+              </button>
+            </div>
           </div>
           <div className="divide-y divide-slate-50">
             {rx.medicines.map((m, j) => (
@@ -294,6 +302,50 @@ function PrescriptionTab({ patient }) {
       {prescriptions.length === 0 && (
         <p className="text-center text-xs font-bold text-slate-400 py-8">No prescriptions yet.</p>
       )}
+
+      {/* Confirm Delete Modal */}
+      <AnimatePresence>
+        {confirmDel && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-sm bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden"
+            >
+              <div className="px-6 pt-6 pb-4 flex flex-col items-center text-center gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+                  <AlertTriangle size={20} className="text-rose-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-slate-900">Delete this prescription?</p>
+                  <p className="text-xs font-bold text-slate-400 mt-1">
+                    <span className="font-black text-slate-700">{confirmDel.id}</span> · {confirmDel.doctor} · {confirmDel.date}
+                  </p>
+                </div>
+                <p className="text-[10px] font-bold text-slate-400">This action cannot be undone.</p>
+              </div>
+              <div className="flex gap-3 px-6 py-4 border-t border-slate-100">
+                <button
+                  onClick={() => setConfirmDel(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all"
+                >
+                  Keep It
+                </button>
+                <button
+                  onClick={() => {
+                    setPrescriptions(prev => prev.filter(r => r.id !== confirmDel.id))
+                    setConfirmDel(null)
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-500 text-white text-xs font-black uppercase tracking-widest hover:bg-rose-600 transition-all"
+                >
+                  Yes, Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
