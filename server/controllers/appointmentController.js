@@ -100,3 +100,50 @@ exports.deleteAppointment = asyncHandler(async (req, res) => {
     new ApiResponse(200, {}, "Appointment deleted successfully")
   );
 });
+
+// @desc    Get appointment statistics
+// @route   GET /api/appointments/stats
+exports.getAppointmentStats = asyncHandler(async (req, res) => {
+  const total = await Appointment.countDocuments();
+  const statusCounts = await Appointment.aggregate([
+    { $group: { _id: "$status", count: { $sum: 1 } } }
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(200, { total, statusCounts }, "Appointment stats fetched successfully")
+  );
+});
+
+// @desc    Get patient appointments
+// @route   GET /api/appointments/patient/:patientId
+exports.getPatientAppointments = asyncHandler(async (req, res) => {
+  const Patient = require("../models/Patient");
+  const patient = await Patient.findById(req.params.patientId);
+  if (!patient) throw new ApiError(404, "Patient not found");
+  
+  const appointments = await Appointment.find({ patient: patient.name }).sort({ date: -1 });
+  return res.status(200).json(new ApiResponse(200, appointments, "Patient appointments fetched successfully"));
+});
+
+// @desc    Get doctor appointments
+// @route   GET /api/appointments/doctor/:doctorId
+exports.getDoctorAppointments = asyncHandler(async (req, res) => {
+  const Doctor = require("../models/Doctor");
+  const doctor = await Doctor.findById(req.params.doctorId);
+  if (!doctor) throw new ApiError(404, "Doctor not found");
+
+  const appointments = await Appointment.find({ doctor: doctor.name }).sort({ date: -1 });
+  return res.status(200).json(new ApiResponse(200, appointments, "Doctor appointments fetched successfully"));
+});
+
+// @desc    Cancel appointment
+// @route   PUT /api/appointments/:id/cancel
+exports.cancelAppointment = asyncHandler(async (req, res) => {
+  const appointment = await Appointment.findByIdAndUpdate(
+    req.params.id,
+    { status: "Cancelled" },
+    { new: true }
+  );
+  if (!appointment) throw new ApiError(404, "Appointment not found");
+  return res.status(200).json(new ApiResponse(200, appointment, "Appointment cancelled successfully"));
+});

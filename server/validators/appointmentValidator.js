@@ -1,31 +1,24 @@
 const { body, param } = require("express-validator");
 
 exports.appointmentValidator = [
-  body("patientId")
-    .isMongoId()
-    .withMessage("Invalid patient ID"),
-  body("doctorId")
-    .isMongoId()
-    .withMessage("Invalid doctor ID"),
-  body("appointmentDate")
-    .isISO8601()
-    .withMessage("Invalid appointment date format"),
-  body("appointmentTime")
-    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
-    .withMessage("Invalid time format (use HH:MM)"),
+  body("patient")
+    .notEmpty()
+    .withMessage("Patient name is required"),
+  body("doctor")
+    .notEmpty()
+    .withMessage("Doctor name is required"),
+  body("date")
+    .notEmpty()
+    .withMessage("Appointment date is required"),
+  body("time")
+    .notEmpty()
+    .withMessage("Appointment time is required"),
   body("reason")
     .trim()
     .notEmpty()
     .withMessage("Reason for appointment is required")
     .isLength({ min: 5 })
     .withMessage("Reason must be at least 5 characters"),
-  body("symptoms")
-    .optional()
-    .trim(),
-  body("duration")
-    .optional()
-    .isNumeric()
-    .withMessage("Duration must be a number"),
 ];
 
 exports.appointmentUpdateValidator = [

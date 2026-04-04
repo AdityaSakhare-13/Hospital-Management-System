@@ -3,6 +3,7 @@ const User = require("../models/User");
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
+const { body } = require("express-validator");
 
 // @desc    Create patient
 // @route   POST /api/patients
@@ -122,5 +123,34 @@ exports.deletePatient = asyncHandler(async (req, res) => {
 
   return res.status(200).json(
     new ApiResponse(200, {}, "Patient deleted successfully")
+  );
+});
+
+// @desc    Get patient statistics
+// @route   GET /api/patients/stats
+exports.getPatientStats = asyncHandler(async (req, res) => {
+  const total = await Patient.countDocuments();
+  const statusCounts = await Patient.aggregate([
+    { $group: { _id: "$status", count: { $sum: 1 } } }
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(200, { total, statusCounts }, "Patient stats fetched successfully")
+  );
+});
+
+// @desc    Search patients
+// @route   GET /api/patients/search/:query
+exports.searchPatients = asyncHandler(async (req, res) => {
+  const { query } = req.params;
+  const patients = await Patient.find({
+    $or: [
+      { name: { $regex: query, $options: "i" } },
+      { contact: { $regex: query, $options: "i" } }
+    ]
+  }).limit(10);
+
+  return res.status(200).json(
+    new ApiResponse(200, patients, "Patients searched successfully")
   );
 });

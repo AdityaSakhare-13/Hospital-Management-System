@@ -105,3 +105,21 @@ exports.deleteDoctor = asyncHandler(async (req, res) => {
     new ApiResponse(200, {}, "Doctor deleted successfully")
   );
 });
+// @desc    Get doctor statistics
+// @route   GET /api/doctors/stats
+exports.getDoctorStats = asyncHandler(async (req, res) => {
+  const totalDoctors = await Doctor.countDocuments();
+  const activeDoctors = await Doctor.countDocuments({ status: "Active" });
+
+  const specializationBreakdown = await Doctor.aggregate([
+    { $group: { _id: "$specialization", count: { $sum: 1 } } }
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(200, {
+      total: totalDoctors,
+      active: activeDoctors,
+      specializations: specializationBreakdown
+    }, "Doctor stats fetched successfully")
+  );
+});
