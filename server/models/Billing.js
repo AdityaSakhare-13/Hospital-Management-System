@@ -14,6 +14,7 @@ const billingSchema = new mongoose.Schema(
     patientName: {
       type: String,
       trim: true,
+      index: true, // 🔥 ADD: search fast
     },
 
     // 🔥 Doctor relation
@@ -73,6 +74,7 @@ const billingSchema = new mongoose.Schema(
         "other",
       ],
       default: "other",
+      index: true, // 🔥 ADD: graph fast
     },
 
     // 🔥 ADD (expense/bill category tracking)

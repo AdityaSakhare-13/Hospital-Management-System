@@ -5,22 +5,17 @@ const userSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
-      required: [true, "Full name is required"],
+      required: [true, "Please add a full name"],
       trim: true,
-      minlength: [3, "Full name must be at least 3 characters"],
-      index: true, // 🔥 ADD (search)
+      index: true, // 🔥 ADD: search fast
     },
 
     email: {
       type: String,
-      required: [true, "Email is required"],
+      required: [true, "Please add an email"],
       unique: true,
-      lowercase: true,
-      index: true, // 🔥 ADD (search fast)
-      match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        "Please enter a valid email",
-      ],
+      match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, "Please add a valid email"],
+      index: true, // 🔥 ADD: login & search fast
     },
 
     password: {

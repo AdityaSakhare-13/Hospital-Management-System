@@ -13,6 +13,7 @@ const patientSchema = new mongoose.Schema(
       type: String,
       required: [true, "Patient name is required"],
       trim: true,
+      index: true, // 🔥 ADD: Fast name search
     },
 
     age: {
@@ -29,6 +30,7 @@ const patientSchema = new mongoose.Schema(
     contact: {
       type: String,
       required: [true, "Contact number is required"],
+      index: true, // 🔥 ADD: Fast phone search
     },
 
     bloodGroup: {
@@ -41,6 +43,7 @@ const patientSchema = new mongoose.Schema(
       type: String,
       enum: ["Active", "Admitted", "Discharged"],
       default: "Active",
+      index: true, // 🔥 ADD: Fast dashboard filter
     },
 
     address: {
@@ -53,19 +56,22 @@ const patientSchema = new mongoose.Schema(
       default: "No known conditions",
     },
 
-    height: {
-      type: Number,
-      default: 0,
-    },
-
-    weight: {
-      type: Number,
-      default: 0,
+    // 🔥 UPDATED (Vitals Tracking)
+    vitals: {
+      bloodPressure: { type: String, default: "0/0" },
+      heartRate: { type: Number, default: 0 },
+      temperature: { type: Number, default: 0 },
+      oxygenSaturation: { type: Number, default: 0 },
+      height: { type: Number, default: 0 },
+      weight: { type: Number, default: 0 },
+      bmi: { type: Number, default: 0 },
+      recordedAt: { type: Date, default: Date.now }
     },
 
     admissionDate: {
       type: Date,
-      default: null // 🔥 ADD (dashboard + patient details ke liye useful)
+      default: Date.now,
+      index: true // 🔥 ADD: Dashboard analytics
     }
   },
   { timestamps: true }

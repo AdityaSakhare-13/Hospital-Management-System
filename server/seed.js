@@ -7,6 +7,8 @@ const Doctor = require("./models/Doctor");
 const Appointment = require("./models/Appointment");
 const Expense = require("./models/Expense");
 const Medicine = require("./models/Medicine");
+const Billing = require("./models/Billing");
+const MedicalRecord = require("./models/MedicalRecord");
 
 const connectDB = require("./config/db");
 
@@ -18,40 +20,53 @@ const usersData = [
 ];
 
 const initialDoctors = [
-  { name: 'Dr. Aryan Mehta', specialization: 'Cardiology', experience: '12 Years', availability: 'Mon, Wed, Fri (10AM–2PM)', contact: '+91 98765 43210', email: 'aryan@hms.com', status: 'Active', patients: 24 },
-  { name: 'Dr. Sneha Verma', specialization: 'Neurology', experience: '8 Years', availability: 'Tue, Thu, Sat (9AM–1PM)', contact: '+91 87654 32109', email: 'sneha@hms.com', status: 'Active', patients: 18 },
-  { name: 'Dr. Rahul Patil', specialization: 'Orthopedics', experience: '15 Years', availability: 'Mon–Fri (2PM–6PM)', contact: '+91 76543 21098', email: 'rahul@hms.com', status: 'On Leave', patients: 0 },
-  { name: 'Dr. Nisha Iyer', specialization: 'Dermatology', experience: '5 Years', availability: 'Wed, Fri, Sun (11AM–4PM)', contact: '+91 65432 10987', email: 'nisha@hms.com', status: 'Active', patients: 12 },
+  { 
+    name: 'Dr. Aryan Mehta', 
+    specialization: 'Cardiology', 
+    category: 'cardiology',
+    roleLevel: 'senior doctor',
+    isOnDuty: true,
+    experience: '12 Years', 
+    availability: 'Mon, Wed, Fri (10AM–2PM)', 
+    contact: '+91 98765 43210', 
+    email: 'aryan@hms.com', 
+    status: 'Active', 
+    patients: 24 
+  },
 ];
 
 const initialPatients = [
-  { name: 'Suresh Raina', age: 34, gender: 'Male', contact: '8765432109', bloodGroup: 'B+', status: 'Active', address: 'Mumbai, MH', medicalHistory: 'Diabetes Type 2', height: 175, weight: 75 }, // Matched to seed user
-  { name: 'Rohan Sharma', age: 34, gender: 'Male', contact: '9876543210', bloodGroup: 'B+', status: 'Active', address: 'Mumbai, MH', medicalHistory: 'Diabetes Type 2', height: 168, weight: 70 },
-  { name: 'Priya Verma', age: 28, gender: 'Female', contact: '8765432109', bloodGroup: 'O+', status: 'Admitted', address: 'Pune, MH', medicalHistory: 'Asthma (mild)', height: 162, weight: 58 },
-  { name: 'Amit Patel', age: 45, gender: 'Male', contact: '9123456789', bloodGroup: 'A+', status: 'Discharged', address: 'Ahmedabad, GJ', medicalHistory: 'Hypertension', height: 180, weight: 82 },
+  { 
+    name: 'Suresh Raina', 
+    age: 34, 
+    gender: 'Male', 
+    contact: '8765432109', 
+    bloodGroup: 'B+', 
+    status: 'Active', 
+    address: 'Mumbai, MH', 
+    medicalHistory: 'Diabetes Type 2',
+    admissionDate: new Date('2024-05-01'),
+    vitals: {
+      bloodPressure: "120/80",
+      heartRate: 72,
+      temperature: 98.6,
+      oxygenSaturation: 98,
+      height: 175,
+      weight: 75,
+      bmi: 24.5
+    }
+  },
 ];
 
-const initialAppointments = [
-  { patient: 'Rohan Sharma', doctor: 'Dr. Aryan Mehta', dept: 'Cardiology', date: '2024-06-12', time: '10:30 AM', status: 'Pending', reason: 'Chest pain' },
-  { patient: 'Priya Verma', doctor: 'Dr. Sneha Verma', dept: 'Neurology', date: '2024-06-12', time: '11:15 AM', status: 'Confirmed', reason: 'Headache' },
-  { patient: 'Vikram Singh', doctor: 'Dr. Aryan Mehta', dept: 'Cardiology', date: '2024-06-14', time: '09:00 AM', status: 'Confirmed', reason: 'Follow-up' },
-];
-
-const initialExpenses = [
-  { item: 'MRI Machine', category: 'Machine', amount: 2500000, date: '2024-05-15' },
-  { item: 'Surgical Tools Set', category: 'Equipment', amount: 85000, date: '2024-05-28' },
-];
-
-const initialMedicines = [
-  { name: "Paracetamol", quantity: 150, price: 5 },
-  { name: "Amoxicillin", quantity: 8, price: 45 },
+const initialBilling = [
+  { patientName: "Suresh Raina", amount: 1500, type: "OPD", paymentStatus: "Paid", department: "cardiology", category: "consultation" },
 ];
 
 const seedDB = async () => {
   try {
     await connectDB();
 
-    console.log("🛠️ Starting Full Database Sync (Frontend → Backend)...");
+    console.log("🛠️ Starting Database Seed (Clinical & Analytics Optimized)...");
 
     // Clean all collections
     await User.deleteMany();
@@ -60,8 +75,8 @@ const seedDB = async () => {
     await Appointment.deleteMany();
     await Expense.deleteMany();
     await Medicine.deleteMany();
-
-    console.log("🗑️ Cleared existing database records.");
+    await Billing.deleteMany();
+    await MedicalRecord.deleteMany();
 
     // 1. Seed Users
     const createdUsers = [];
@@ -69,37 +84,60 @@ const seedDB = async () => {
       const user = await User.create(u);
       createdUsers.push(user);
     }
+
+    // 2. Seed Patient & Doctor
+    const drUser = createdUsers.find(u => u.role === "doctor");
+    initialDoctors[0].userId = drUser._id;
+    const doctor = await Doctor.create(initialDoctors[0]);
+
+    const ptUser = createdUsers.find(u => u.role === "patient");
+    initialPatients[0].userId = ptUser._id;
+    const patient = await Patient.create(initialPatients[0]);
+
+    // 3. Seed Medical Records (Internal & Historical)
+    await MedicalRecord.create([
+      {
+        patientId: patient._id,
+        doctorId: doctor._id,
+        type: "Prescription",
+        source: "Internal",
+        title: "Initial Consultation",
+        description: "Take Metformin 500mg daily.",
+        clinicName: "Our Hospital",
+        date: new Date('2024-06-01')
+      },
+      {
+        patientId: patient._id,
+        type: "Historical History",
+        source: "External",
+        title: "Asthma History (Childhood)",
+        description: "Diagnosed at age 10. Used inhaler for 5 years.",
+        clinicName: "Apollo Hospital, Delhi",
+        date: new Date('2015-06-12')
+      },
+      {
+        patientId: patient._id,
+        type: "Lab Report",
+        source: "Internal",
+        title: "Blood Sugar Test",
+        description: "Fasting blood sugar level: 110 mg/dL.",
+        clinicName: "Main Lab",
+        date: new Date('2024-06-05')
+      }
+    ]);
+
+    // 4. Seed Billing
+    initialBilling[0].patientId = patient._id;
+    initialBilling[0].doctorId = doctor._id;
+    await Billing.create(initialBilling);
+
     console.log(`✅ Seeded ${createdUsers.length} Base Users.`);
+    console.log(`✅ Seeded 1 Doctor (Aryan Mehta).`);
+    console.log(`✅ Seeded 1 Patient (Suresh Raina) with full Clinical Records.`);
+    console.log(`✅ Seeded Internal Prescriptions and External Historical Data.`);
+    console.log(`✅ Seeded Billing records for Revenue Analytics.`);
 
-    // 2. Link Doctors
-    const doctorUser = createdUsers.find(u => u.email === "doctor@hms.com");
-    if (doctorUser) {
-      const mainDoctor = initialDoctors.find(d => d.email === "aryan@hms.com");
-      if (mainDoctor) mainDoctor.userId = doctorUser._id;
-    }
-
-    // 3. Link Patients
-    const patientUser = createdUsers.find(u => u.email === "patient@hms.com");
-    if (patientUser) {
-      const mainPatient = initialPatients.find(p => p.contact === "8765432109"); // Suresh Raina
-      if (mainPatient) mainPatient.userId = patientUser._id;
-    }
-
-    // 4. Insert Profiles
-    await Doctor.insertMany(initialDoctors);
-    console.log(`✅ Seeded ${initialDoctors.length} Doctors (linked to users).`);
-
-    await Patient.insertMany(initialPatients);
-    console.log(`✅ Seeded ${initialPatients.length} Patients (linked to users).`);
-
-    // 5. Seed Others
-    await Appointment.insertMany(initialAppointments);
-    await Expense.insertMany(initialExpenses);
-    await Medicine.insertMany(initialMedicines);
-
-    console.log(`✅ Seeded remaining modules (Appointments, Expenses, Medicines).`);
-
-    console.log("\n🎉 DATABASE SYNC COMPLETE! All users are now correctly linked to their profiles.\n");
+    console.log("\n🎉 SEED COMPLETE! Your schema is now fully verified for Hospital operations.\n");
     process.exit();
   } catch (err) {
     console.error("❌ Seeding failed:", err);
