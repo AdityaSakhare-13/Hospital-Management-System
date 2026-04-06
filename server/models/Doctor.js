@@ -82,8 +82,29 @@ const doctorSchema = new mongoose.Schema(
       default: false,
     },
 
+    // 🔥 ADD (for clinical shifts roster)
+    shift: {
+      type: String,
+      enum: ["Morning", "Afternoon", "Night", "On Call"],
+      default: "Morning",
+    },
+
+    // 🔥 ADD (for doctor search / listing)
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+
     // existing
     patients: {
+      type: Number,
+      default: 0,
+    },
+
+    // 🔥 ADD (for performance rankings)
+    totalAppointments: {
       type: Number,
       default: 0,
     },

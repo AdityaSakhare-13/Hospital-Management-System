@@ -151,8 +151,8 @@ exports.updateProfile = asyncHandler(async (req, res) => {
 
   const updateFields = {};
   if (fullName) updateFields.fullName = fullName;
-  if (phone)    updateFields.phone    = phone;
-  if (avatar)   updateFields.avatar   = avatar;
+  if (phone) updateFields.phone = phone;
+  if (avatar) updateFields.avatar = avatar;
 
   if (email) {
     const exists = await User.findOne({ email, _id: { $ne: req.user.id } });

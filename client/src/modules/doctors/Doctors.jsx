@@ -3,57 +3,29 @@ import { Plus, Search, Filter, MoreVertical, Star, Clock, Phone, Mail, Edit, Tra
 import { motion, AnimatePresence } from 'framer-motion'
 import { getAllDoctors, createDoctor, updateDoctor, deleteDoctor } from './doctorApi'
 
-// Mock Data based on the schema
-const initialDoctors = [
-  {
-    id: 'DOC-001',
-    name: 'Dr. Aryan Mehta',
-    specialization: 'Cardiology',
-    availability: 'Mon, Wed, Fri (10:00 AM - 02:00 PM)',
-    contact: '+91 98765 43210',
-    email: 'aryan.mehta@hms.com',
-    experience: '12 Years',
-    status: 'Active',
-    rating: 4.8
-  },
-  {
-    id: 'DOC-002',
-    name: 'Dr. Sneha Verma',
-    specialization: 'Neurology',
-    availability: 'Tue, Thu, Sat (09:00 AM - 01:00 PM)',
-    contact: '+91 87654 32109',
-    email: 'sneha.verma@hms.com',
-    experience: '8 Years',
-    status: 'Active',
-    rating: 4.9
-  },
-  {
-    id: 'DOC-003',
-    name: 'Dr. Rahul Patil',
-    specialization: 'Orthopedics',
-    availability: 'Mon to Fri (02:00 PM - 06:00 PM)',
-    contact: '+91 76543 21098',
-    email: 'rahul.patil@hms.com',
-    experience: '15 Years',
-    status: 'On Leave',
-    rating: 4.7
-  },
-  {
-    id: 'DOC-004',
-    name: 'Dr. Nisha Iyer',
-    specialization: 'Dermatology',
-    availability: 'Wed, Fri, Sun (11:00 AM - 04:00 PM)',
-    contact: '+91 65432 10987',
-    email: 'nisha.iyer@hms.com',
-    experience: '5 Years',
-    status: 'Active',
-    rating: 4.6
-  }
+const specializationsList = [
+  'Cardiology', 'Neurology', 'Orthopedics', 'Dermatology', 'Pediatrics', 'General Medicine'
 ]
 
-const specializations = [
-  'All', 'Cardiology', 'Neurology', 'Orthopedics', 'Dermatology', 'Pediatrics', 'General Medicine'
+const categories = [
+  { value: 'cardiology', label: 'Cardiology' },
+  { value: 'neurology', label: 'Neurology' },
+  { value: 'orthopedic', label: 'Orthopedic' },
+  { value: 'dermatology', label: 'Dermatology' },
+  { value: 'pediatric', label: 'Pediatric' },
+  { value: 'general', label: 'General Medicine' }
 ]
+
+const roleLevels = [
+  { value: 'senior doctor', label: 'Senior Doctor' },
+  { value: 'junior doctor', label: 'Junior Doctor' },
+  { value: 'resident doctor', label: 'Resident' },
+  { value: 'consultant', label: 'Consultant' },
+  { value: 'intern', label: 'Intern' },
+  { value: 'other', label: 'Other' }
+]
+
+const shifts = ['Morning', 'Afternoon', 'Night', 'On Call']
 
 function Doctors() {
   const [doctors, setDoctors] = useState([])
@@ -91,11 +63,15 @@ function Doctors() {
   const [formData, setFormData] = useState({
     name: '',
     specialization: '',
+    category: 'general',
+    roleLevel: 'other',
+    experience: '',
     availability: '',
     contact: '',
     email: '',
-    experience: '',
-    status: 'Active'
+    status: 'Active',
+    shift: 'Morning',
+    rating: 0
   })
 
   // Filter logic
@@ -108,7 +84,19 @@ function Doctors() {
 
   const openAddForm = () => {
     setEditingDoctor(null)
-    setFormData({ name: '', specialization: '', availability: '', contact: '', email: '', experience: '', status: 'Active' })
+    setFormData({ 
+      name: '', 
+      specialization: '', 
+      category: 'general',
+      roleLevel: 'other',
+      experience: '',
+      availability: '', 
+      contact: '', 
+      email: '', 
+      status: 'Active',
+      shift: 'Morning',
+      rating: 0
+    })
     setIsFormOpen(true)
   }
 
@@ -190,7 +178,7 @@ function Doctors() {
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 custom-scrollbar shrink-0">
-            {specializations.map(spec => (
+            {['All', ...specializationsList].map(spec => (
               <button
                 key={spec}
                 onClick={() => setSelectedSpec(spec)}
@@ -212,8 +200,8 @@ function Doctors() {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/50">
                   <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Doctor Info</th>
-                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Specialization</th>
-                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Experience</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Spec & Rank</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Shift</th>
                   <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Availability</th>
                   <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Status</th>
                   <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Actions</th>
@@ -244,7 +232,7 @@ function Doctors() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="h-10 w-10 shrink-0 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-black group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                          {doc.name.startsWith('Dr.') 
+                          {doc.name.startsWith('Dr.')
                             ? (doc.name.split(' ').slice(1).map(n => n[0]).join('').toUpperCase() || 'D')
                             : (doc.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'D')}
                         </div>
@@ -259,22 +247,24 @@ function Doctors() {
                         <span className="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-wider border border-emerald-100/50">
                           {doc.specialization}
                         </span>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1.5">{doc.roleLevel || 'Assistant'}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col items-center">
                         <div className="flex items-center gap-1.5">
-                          <Star size={12} className="text-amber-400 fill-current" />
-                          <span className="text-xs font-bold text-slate-700">{doc.experience}</span>
+                          <Clock size={12} className="text-blue-400" />
+                          <span className="text-xs font-bold text-slate-700">{doc.shift || 'Morning'}</span>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col items-center">
-                        <div className="flex items-center gap-2">
-                          <Clock size={12} className="text-slate-400" />
-                          <span className="text-[11px] font-bold text-slate-600 truncate max-w-[150px]">{doc.availability}</span>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Star size={12} className="text-amber-400 fill-current" />
+                          <span className="text-xs font-bold text-slate-700">{doc.experience}</span>
                         </div>
+                        <span className="text-[10px] font-bold text-slate-400">{doc.availability}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -412,29 +402,96 @@ function Doctors() {
                           required
                           value={formData.specialization}
                           onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                          className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold text-slate-900 appearance-none pointer-events-auto"
+                          className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold text-slate-900 appearance-none"
                         >
                           <option value="" disabled>Select Department</option>
-                          {specializations.filter(s => s !== 'All').map(spec => (
+                          {specializationsList.map(spec => (
                             <option key={spec} value={spec}>{spec}</option>
                           ))}
                         </select>
                       </div>
 
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Experience Level</label>
-                        <input
-                          required
-                          type="text"
-                          placeholder="e.g. 5 Years"
-                          value={formData.experience}
-                          onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                          className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold text-slate-900"
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Clinical Category</label>
+                          <select
+                            required
+                            value={formData.category}
+                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold text-slate-900 appearance-none"
+                          >
+                            {categories.map(cat => (
+                              <option key={cat.value} value={cat.value}>{cat.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Current Role</label>
+                          <select
+                            required
+                            value={formData.roleLevel}
+                            onChange={(e) => setFormData({ ...formData, roleLevel: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold text-slate-900 appearance-none"
+                          >
+                            {roleLevels.map(role => (
+                              <option key={role.value} value={role.value}>{role.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Experience</label>
+                          <input
+                            required
+                            type="text"
+                            placeholder="e.g. 5 Years"
+                            value={formData.experience}
+                            onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold text-slate-900"
+                          />
+                        </div>
+                        <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Rating (0.0 - 5.0)</label>
+                           <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="5"
+                            value={formData.rating}
+                            onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) })}
+                            className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold text-slate-900"
+                          />
+                        </div>
                       </div>
                     </div>
 
                     <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                         <div>
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Assigned Shift</label>
+                            <select
+                              value={formData.shift}
+                              onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
+                              className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold text-slate-900 appearance-none"
+                            >
+                              {shifts.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                         </div>
+                         <div>
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Status</label>
+                            <select
+                              value={formData.status}
+                              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                              className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm font-bold text-slate-900 appearance-none"
+                            >
+                              <option value="Active">Active</option>
+                              <option value="On Leave">On Leave</option>
+                              <option value="Inactive">Inactive</option>
+                            </select>
+                         </div>
+                      </div>
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Clinic Hours</label>
                         <div className="relative">

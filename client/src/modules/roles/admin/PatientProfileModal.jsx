@@ -141,8 +141,8 @@ function PatientProfileModal({ patient, onClose }) {
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={`flex items-center gap-1.5 px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === tab.key
-                      ? 'border-emerald-500 text-emerald-600'
-                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                    ? 'border-emerald-500 text-emerald-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
                     }`}
                 >
                   <tab.icon size={12} />

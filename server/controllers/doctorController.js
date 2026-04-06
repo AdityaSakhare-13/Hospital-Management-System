@@ -7,7 +7,21 @@ const ApiResponse = require("../utils/ApiResponse");
 // @desc    Create doctor
 // @route   POST /api/doctors
 exports.createDoctor = asyncHandler(async (req, res) => {
-  const { name, specialization, experience, availability, contact, email, status, patients } = req.body;
+  const {
+    name,
+    specialization,
+    category,
+    experience,
+    availability,
+    contact,
+    email,
+    status,
+    roleLevel,
+    shift,
+    isOnDuty,
+    rating,
+    patients,
+  } = req.body;
 
   // Check if doctor already exists
   const existingDoctor = await Doctor.findOne({ email });
@@ -18,11 +32,16 @@ exports.createDoctor = asyncHandler(async (req, res) => {
   const doctor = await Doctor.create({
     name,
     specialization,
+    category: category || "general",
     experience,
     availability,
     contact,
     email,
     status: status || "Active",
+    roleLevel: roleLevel || "other",
+    shift: shift || "Morning",
+    isOnDuty: isOnDuty || false,
+    rating: rating || 0,
     patients: patients || 0,
   });
 
@@ -34,7 +53,7 @@ exports.createDoctor = asyncHandler(async (req, res) => {
 // @desc    Get all doctors
 // @route   GET /api/doctors
 exports.getAllDoctors = asyncHandler(async (req, res) => {
-  const { search } = req.query;
+  const { search, category, status, roleLevel, shift, isOnDuty } = req.query;
 
   let query = {};
   if (search) {
@@ -43,6 +62,12 @@ exports.getAllDoctors = asyncHandler(async (req, res) => {
       { specialization: { $regex: search, $options: "i" } },
     ];
   }
+
+  if (category) query.category = category;
+  if (status) query.status = status;
+  if (roleLevel) query.roleLevel = roleLevel;
+  if (shift) query.shift = shift;
+  if (isOnDuty !== undefined) query.isOnDuty = isOnDuty === "true";
 
   const doctors = await Doctor.find(query).sort({ createdAt: -1 });
 
@@ -68,7 +93,21 @@ exports.getDoctorById = asyncHandler(async (req, res) => {
 // @desc    Update doctor
 // @route   PUT /api/doctors/:id
 exports.updateDoctor = asyncHandler(async (req, res) => {
-  const { name, specialization, experience, availability, contact, email, status, patients } = req.body;
+  const {
+    name,
+    specialization,
+    category,
+    experience,
+    availability,
+    contact,
+    email,
+    status,
+    roleLevel,
+    shift,
+    isOnDuty,
+    rating,
+    patients,
+  } = req.body;
 
   let doctor = await Doctor.findById(req.params.id);
 
@@ -79,11 +118,16 @@ exports.updateDoctor = asyncHandler(async (req, res) => {
   // Update fields
   if (name) doctor.name = name;
   if (specialization) doctor.specialization = specialization;
+  if (category) doctor.category = category;
   if (experience) doctor.experience = experience;
   if (availability) doctor.availability = availability;
   if (contact) doctor.contact = contact;
   if (email) doctor.email = email;
   if (status) doctor.status = status;
+  if (roleLevel) doctor.roleLevel = roleLevel;
+  if (shift) doctor.shift = shift;
+  if (isOnDuty !== undefined) doctor.isOnDuty = isOnDuty;
+  if (rating !== undefined) doctor.rating = rating;
   if (patients !== undefined) doctor.patients = patients;
 
   doctor = await doctor.save();

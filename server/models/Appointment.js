@@ -28,6 +28,21 @@ const appointmentSchema = new mongoose.Schema(
       required: [true, "Department is required"],
     },
 
+    // 🔥 ADD (for clinical breakdown)
+    type: {
+      type: String,
+      enum: ["Consultation", "Follow-up", "Emergency", "Routine"],
+      default: "Consultation",
+    },
+
+    // 🔥 ADD (for urgent scheduling list)
+    priority: {
+      type: String,
+      enum: ["Normal", "Urgent", "Emergency"],
+      default: "Normal",
+      index: true,
+    },
+
     // 🔥 FIX (String → Date & indexed for bar graphs)
     date: {
       type: Date,
@@ -44,6 +59,8 @@ const appointmentSchema = new mongoose.Schema(
       type: String,
       enum: [
         "Pending",
+        "Scheduled",
+        "In Progress",
         "Confirmed",
         "Cancelled",
         "Completed",

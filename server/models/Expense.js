@@ -10,7 +10,7 @@ const expenseSchema = new mongoose.Schema(
 
     category: {
       type: String,
-      enum: ["Machine", "Equipment", "Furniture", "Other"],
+      enum: ["Machine", "Equipment", "Furniture", "Medicine", "Salary", "Other"],
       default: "Other",
       index: true, // 🔥 ADD (filter fast)
     },

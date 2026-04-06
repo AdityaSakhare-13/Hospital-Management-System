@@ -24,6 +24,18 @@ exports.doctorValidator = [
     .optional()
     .isIn(["Active", "On Leave", "Inactive"])
     .withMessage("Invalid status"),
+  body("category")
+    .optional()
+    .isIn(["cardiology", "neurology", "orthopedic", "dermatology", "pediatric", "general"])
+    .withMessage("Invalid category"),
+  body("roleLevel")
+    .optional()
+    .isIn(["senior doctor", "junior doctor", "resident doctor", "consultant", "intern", "other"])
+    .withMessage("Invalid role level"),
+  body("shift")
+    .optional()
+    .isIn(["Morning", "Afternoon", "Night", "On Call"])
+    .withMessage("Invalid shift"),
 ];
 
 exports.doctorIdParamValidator = [

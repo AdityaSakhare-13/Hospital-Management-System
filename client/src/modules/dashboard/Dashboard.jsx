@@ -1,48 +1,48 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
-import { 
-  Users, 
-  Calendar, 
-  CreditCard, 
-  Activity, 
-  TrendingUp, 
-  ArrowUpRight, 
-  Clock, 
-  ShoppingBag 
+import {
+  Users,
+  Calendar,
+  CreditCard,
+  Activity,
+  TrendingUp,
+  ArrowUpRight,
+  Clock,
+  ShoppingBag
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 const stats = [
-  { 
-    label: 'Total Patients', 
-    value: '12,842', 
-    change: '+12.5%', 
-    trend: 'up', 
-    icon: Users, 
-    color: 'emerald' 
+  {
+    label: 'Total Patients',
+    value: '12,842',
+    change: '+12.5%',
+    trend: 'up',
+    icon: Users,
+    color: 'emerald'
   },
-  { 
-    label: 'Appointments', 
-    value: '184', 
-    change: '+8.2%', 
-    trend: 'up', 
-    icon: Calendar, 
-    color: 'blue' 
+  {
+    label: 'Appointments',
+    value: '184',
+    change: '+8.2%',
+    trend: 'up',
+    icon: Calendar,
+    color: 'blue'
   },
-  { 
-    label: 'Total Revenue', 
-    value: '₹14.2L', 
-    change: '+14.1%', 
-    trend: 'up', 
-    icon: CreditCard, 
-    color: 'orange' 
+  {
+    label: 'Total Revenue',
+    value: '₹14.2L',
+    change: '+14.1%',
+    trend: 'up',
+    icon: CreditCard,
+    color: 'orange'
   },
-  { 
-    label: 'Active Pharmacy', 
-    value: '1,240', 
-    change: '-2.4%', 
-    trend: 'down', 
-    icon: ShoppingBag, 
-    color: 'purple' 
+  {
+    label: 'Active Pharmacy',
+    value: '1,240',
+    change: '-2.4%',
+    trend: 'down',
+    icon: ShoppingBag,
+    color: 'purple'
   },
 ]
 
@@ -108,7 +108,7 @@ function Dashboard() {
             <h3 className="text-lg font-black text-slate-900 border-l-4 border-emerald-500 pl-4 uppercase tracking-widest">Patient Distribution</h3>
             <p className="text-xs font-bold text-slate-400 pl-5">Distribution by Department</p>
           </div>
-          
+
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -125,10 +125,10 @@ function Dashboard() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip 
-                   contentStyle={{ 
-                    borderRadius: '16px', 
-                    border: 'none', 
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '16px',
+                    border: 'none',
                     boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
                     fontSize: '12px',
                     fontWeight: 'bold',
@@ -181,15 +181,15 @@ function Dashboard() {
                   </div>
                 </div>
                 <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border
-                  ${apt.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                    apt.status === 'Pending' ? 'bg-orange-50 text-orange-600 border-orange-100' : 
-                    'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                  ${apt.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                    apt.status === 'Pending' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                      'bg-rose-50 text-rose-600 border-rose-100'}`}>
                   {apt.status}
                 </div>
               </div>
             ))}
           </div>
-          
+
           <button className="w-full mt-8 py-4 rounded-2xl bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all transform hover:scale-[1.01] active:scale-95 shadow-sm">
             View All Records
           </button>

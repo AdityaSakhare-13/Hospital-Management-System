@@ -135,7 +135,7 @@ exports.updatePatient = asyncHandler(async (req, res) => {
     if (!patient.vitals) patient.vitals = {};
     if (height !== undefined) patient.vitals.height = height;
     if (weight !== undefined) patient.vitals.weight = weight;
-    
+
     // Explicitly tell Mongoose that the nested vitals object has changed
     patient.markModified('vitals');
   }

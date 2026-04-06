@@ -46,6 +46,22 @@ const patientSchema = new mongoose.Schema(
       index: true, // 🔥 ADD: Fast dashboard filter
     },
 
+    // 🔥 ADD (for department-wise distribution charts)
+    department: {
+      type: String,
+      enum: [
+        "Cardiology",
+        "Neurology",
+        "Orthopedic",
+        "Dermatology",
+        "Pediatric",
+        "General",
+        "Emergency",
+      ],
+      default: "General",
+      index: true,
+    },
+
     address: {
       type: String,
       required: [true, "Address is required"],
@@ -72,7 +88,14 @@ const patientSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
       index: true // 🔥 ADD: Dashboard analytics
-    }
+    },
+
+    // 🔥 ADD (track activity engagement)
+    lastVisit: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
   },
   { timestamps: true }
 );

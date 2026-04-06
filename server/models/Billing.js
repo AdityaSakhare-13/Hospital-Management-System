@@ -44,6 +44,21 @@ const billingSchema = new mongoose.Schema(
       index: true, // 🔥 ADD (filter fast)
     },
 
+    // 🔥 ADD (matches 'status' field in BillingSupport.jsx)
+    status: {
+      type: String,
+      enum: ["Paid", "Pending", "Cancelled"],
+      default: "Pending",
+      index: true,
+    },
+
+    // 🔥 ADD (matches 'service' field in BillingSupport.jsx)
+    service: {
+      type: String,
+      trim: true,
+      index: true,
+    },
+
     paymentMethod: {
       type: String,
       enum: ["cash", "card", "upi", "other"],

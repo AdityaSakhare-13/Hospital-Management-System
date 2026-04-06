@@ -5,25 +5,25 @@ import { motion } from 'framer-motion'
 const DOCTOR_LEVELS = ['Senior Doctor', 'Junior Doctor', 'Resident Doctor', 'Consultant', 'Intern', 'Other']
 
 const LEVEL_COLORS = {
-  'Senior Doctor':   'bg-blue-50 text-blue-700 border-blue-200',
-  'Junior Doctor':   'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Senior Doctor': 'bg-blue-50 text-blue-700 border-blue-200',
+  'Junior Doctor': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   'Resident Doctor': 'bg-purple-50 text-purple-700 border-purple-200',
-  'Consultant':      'bg-amber-50 text-amber-700 border-amber-200',
-  'Intern':          'bg-pink-50 text-pink-700 border-pink-200',
-  'Other':           'bg-slate-50 text-slate-600 border-slate-200',
+  'Consultant': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Intern': 'bg-pink-50 text-pink-700 border-pink-200',
+  'Other': 'bg-slate-50 text-slate-600 border-slate-200',
 }
 
 const initialDoctors = [
-  { id: 'D-001', name: 'Dr. Aryan Mehta',  specialization: 'Cardiology',       experience: '12 Years', email: 'aryan@hms.com',  level: 'Senior Doctor' },
-  { id: 'D-002', name: 'Dr. Sneha Verma',  specialization: 'Neurology',         experience: '8 Years',  email: 'sneha@hms.com',  level: 'Junior Doctor' },
-  { id: 'D-003', name: 'Dr. Rahul Patil',  specialization: 'Orthopedics',       experience: '15 Years', email: 'rahul@hms.com',  level: 'Senior Doctor' },
-  { id: 'D-004', name: 'Dr. Nisha Iyer',   specialization: 'Dermatology',       experience: '5 Years',  email: 'nisha@hms.com',  level: 'Junior Doctor' },
+  { id: 'D-001', name: 'Dr. Aryan Mehta', specialization: 'Cardiology', experience: '12 Years', email: 'aryan@hms.com', level: 'Senior Doctor' },
+  { id: 'D-002', name: 'Dr. Sneha Verma', specialization: 'Neurology', experience: '8 Years', email: 'sneha@hms.com', level: 'Junior Doctor' },
+  { id: 'D-003', name: 'Dr. Rahul Patil', specialization: 'Orthopedics', experience: '15 Years', email: 'rahul@hms.com', level: 'Senior Doctor' },
+  { id: 'D-004', name: 'Dr. Nisha Iyer', specialization: 'Dermatology', experience: '5 Years', email: 'nisha@hms.com', level: 'Junior Doctor' },
 ]
 
 function RoleAssign() {
   const [doctors, setDoctors] = useState(initialDoctors)
-  const [search, setSearch]   = useState('')
-  const [saved, setSaved]     = useState({})
+  const [search, setSearch] = useState('')
+  const [saved, setSaved] = useState({})
 
   const filtered = doctors.filter(d =>
     d.name.toLowerCase().includes(search.toLowerCase()) ||
