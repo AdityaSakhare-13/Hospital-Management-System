@@ -243,6 +243,25 @@ exports.updateRole = asyncHandler(async (req, res) => {
   );
 });
 
+// ================= DELETE USER =================
+exports.deleteUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (user.isActive) {
+    throw new ApiError(400, "Cannot delete an active user. Deactivate first.");
+  }
+
+  await User.findByIdAndDelete(req.params.id);
+
+  return res.status(200).json(
+    new ApiResponse(200, {}, "User deleted successfully")
+  );
+});
+
 // ================= TOGGLE ACTIVE =================
 exports.toggleActive = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
@@ -273,8 +292,4 @@ exports.deactivateAccount = asyncHandler(async (req, res) => {
     new ApiResponse(200, user, "Account deactivated successfully")
   );
 });
-
-exports.updateStatus = async (req, res) => {
-  res.json({ message: "Status updated" });
-};
 
