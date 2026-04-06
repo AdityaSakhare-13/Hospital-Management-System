@@ -1,29 +1,22 @@
 const express = require("express");
 const router = express.Router();
+const { protect, authorize } = require("../middleware/authMiddleware");
 
 const {
   getAllUsers,
   getUserById,
   updateRole,
   toggleActive,
-  updateStatus,        // ✅ IMPORTANT (ये add किया)
+  deleteUser,
 } = require("../controllers/authController");
 
-// ================= ROUTES =================
+router.use(protect)
+router.use(authorize("admin"))
 
-// 👉 Get all users
-router.get("/users", getAllUsers);
-
-// 👉 Get user by ID
-router.get("/users/:id", getUserById);
-
-// 👉 Update user role
-router.put("/users/:id/role", updateRole);
-
-// 👉 Toggle active / inactive
-router.put("/users/:id/toggle-active", toggleActive);
-
-// 👉 Update status (active / inactive)
-router.patch("/users/:id/status", updateStatus);
+router.get("/", getAllUsers);
+router.get("/:id", getUserById);
+router.put("/:id/role", updateRole);
+router.put("/:id/toggle-active", toggleActive);
+router.delete("/:id", deleteUser);
 
 module.exports = router;
