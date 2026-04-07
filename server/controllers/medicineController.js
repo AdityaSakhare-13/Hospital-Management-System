@@ -57,7 +57,10 @@ exports.deleteMedicine = asyncHandler(async (req, res) => {
 // @desc    Get low stock alerts
 // @route   GET /api/medicines/stock-alerts
 exports.getLowStockAlerts = asyncHandler(async (req, res) => {
-  const lowStock = await Medicine.find({ quantity: { $lt: 10 } });
+  // ✅ FIX: Use each medicine's own minStock field, not a hardcoded 10
+  const lowStock = await Medicine.find({
+    $expr: { $lte: ["$quantity", "$minStock"] },
+  }).sort({ quantity: 1 });
 
   return res
     .status(200)

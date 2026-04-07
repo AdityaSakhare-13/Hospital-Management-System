@@ -37,26 +37,42 @@ exports.createPatient = asyncHandler(async (req, res) => {
   );
 });
 
-// @desc    Get all patients
+// @desc    Get all patients (paginated)
 // @route   GET /api/patients
 exports.getAllPatients = asyncHandler(async (req, res) => {
-  const { search, gender, status } = req.query;
+  const { search, gender, status, department, page = 1, limit = 50 } = req.query;
 
   let query = {};
   if (search) {
     query.$or = [
-      { name: { $regex: search, $options: "i" } },
+      { name:    { $regex: search, $options: "i" } },
       { contact: { $regex: search, $options: "i" } },
     ];
   }
 
-  if (gender) query.gender = gender;
-  if (status) query.status = status;
+  if (gender)     query.gender     = gender;
+  if (status)     query.status     = status;
+  if (department) query.department = department;
 
-  const patients = await Patient.find(query).sort({ createdAt: -1 });
+  const skip  = (parseInt(page) - 1) * parseInt(limit);
+  const total = await Patient.countDocuments(query);
 
+  const patients = await Patient.find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  // ✅ FIX: Return {patients, pagination} shape — matches what adminApi.js expects
   return res.status(200).json(
-    new ApiResponse(200, patients, "Patients fetched successfully")
+    new ApiResponse(200, {
+      patients,
+      pagination: {
+        total,
+        pages: Math.ceil(total / parseInt(limit)),
+        currentPage: parseInt(page),
+        limit: parseInt(limit),
+      },
+    }, "Patients fetched successfully")
   );
 });
 

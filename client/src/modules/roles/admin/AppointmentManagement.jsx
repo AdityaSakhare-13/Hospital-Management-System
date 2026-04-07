@@ -33,7 +33,9 @@ function AppointmentManagement() {
   const fetchAppointments = async () => {
     try {
       const res = await api.get('/appointments')
-      setAppointments(res.data.data || [])
+      // backend returns { statusCode, data: { appointments: [], pagination: {} }, message }
+      const raw = res.data.data
+      setAppointments(Array.isArray(raw) ? raw : (raw?.appointments ?? []))
     } catch {
       notify('Failed to load appointments.', 'error')
     } finally {

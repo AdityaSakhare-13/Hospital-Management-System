@@ -69,18 +69,60 @@ function MyRecords() {
 
    const handleDownload = (record) => {
       setDownloadingId(record.id)
-      setTimeout(() => {
-         setDownloadingId(null)
-         alert(`Success! "${record.title}" has been saved to your downloads.`)
-      }, 1500)
+      try {
+         const dateStr = new Date(record.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })
+         const text = [
+            '═══════════════════════════════════════════',
+            '          HOSPITAL MANAGEMENT SYSTEM       ',
+            '              MEDICAL RECORD               ',
+            '═══════════════════════════════════════════',
+            '',
+            `  Record Title  :  ${record.title}`,
+            `  Type          :  ${record.type}`,
+            `  Doctor        :  ${record.doctor}`,
+            `  Department    :  ${record.dept}`,
+            `  Date          :  ${dateStr}`,
+            `  Attachments   :  ${record.size}`,
+            '',
+            '───────────────────────────────────────────',
+            `  Generated on  :  ${new Date().toLocaleString('en-IN')}`,
+            '  This is a computer-generated document.',
+            '═══════════════════════════════════════════',
+         ].join('\n')
+         const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+         const url = URL.createObjectURL(blob)
+         const a = document.createElement('a')
+         a.href = url
+         a.download = `${record.title.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_')}_record.txt`
+         a.click()
+         URL.revokeObjectURL(url)
+      } catch (e) {
+         console.error('Download failed:', e)
+      }
+      setDownloadingId(null)
    }
 
    const handleDownloadAll = () => {
+      if (!filteredRecords.length) return
       setIsDownloadingAll(true)
-      setTimeout(() => {
-         setIsDownloadingAll(false)
-         alert(`Success! All ${filteredRecords.length} medical records have been bundled and downloaded.`)
-      }, 2500)
+      try {
+         const header = 'Title,Type,Doctor,Department,Date,Attachments'
+         const rows = filteredRecords.map(r => {
+            const d = new Date(r.date).toLocaleDateString('en-IN')
+            return [r.title, r.type, r.doctor, r.dept, d, r.size].map(v => `"${(v || '').toString().replace(/"/g, '""')}"`).join(',')
+         })
+         const csv = header + '\n' + rows.join('\n')
+         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+         const url = URL.createObjectURL(blob)
+         const a = document.createElement('a')
+         a.href = url
+         a.download = `Medical_Records_${new Date().toISOString().slice(0,10)}.csv`
+         a.click()
+         URL.revokeObjectURL(url)
+      } catch (e) {
+         console.error('Download all failed:', e)
+      }
+      setIsDownloadingAll(false)
    }
 
    const handleViewDetail = (record) => {

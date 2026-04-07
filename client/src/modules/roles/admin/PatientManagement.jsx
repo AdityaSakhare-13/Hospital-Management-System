@@ -35,9 +35,9 @@ function PatientManagement() {
     setError('')
     try {
       const res = await getAllPatients(1, 100, search)
-      // backend returns { data: { data: [...] } } or { data: [...] }
-      const list = res?.data?.data ?? res?.data ?? []
-      // apply gender + status filter client-side (backend supports search only)
+      // backend returns { statusCode, data: { patients: [...], pagination: {} }, message }
+      const raw = res?.data ?? res
+      const list = Array.isArray(raw) ? raw : (raw?.patients ?? raw?.data?.patients ?? [])
       setPatients(list)
     } catch (err) {
       setError(err?.message || 'Failed to load patients')

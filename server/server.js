@@ -16,6 +16,8 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const queueRoutes = require("./routes/queueRoutes");
 const userRoutes = require("./routes/userRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
+const reportRoutes = require("./routes/reportRoutes");
+
 const errorHandler = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -41,6 +43,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/queue", queueRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/expenses", expenseRoutes);
+app.use("/api/reports", reportRoutes);
+
 app.use("/api/records", require("./routes/medicalRecordRoutes"));
 
 // Root/Health Check

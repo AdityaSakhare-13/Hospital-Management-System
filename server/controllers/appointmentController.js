@@ -6,7 +6,7 @@ const ApiResponse = require("../utils/ApiResponse");
 // @desc    Create appointment
 // @route   POST /api/appointments
 exports.createAppointment = asyncHandler(async (req, res) => {
-  const { patient, doctor, dept, date, time, reason, status } = req.body;
+  const { patient, doctor, dept, date, time, reason, status, patientId, doctorId, type, priority } = req.body;
 
   const appointment = await Appointment.create({
     patient,
@@ -16,6 +16,10 @@ exports.createAppointment = asyncHandler(async (req, res) => {
     time,
     reason,
     status: status || "Pending",
+    patientId: patientId || null,
+    doctorId: doctorId || null,
+    type: type || "Consultation",
+    priority: priority || "Normal",
   });
 
   return res.status(201).json(
@@ -26,23 +30,45 @@ exports.createAppointment = asyncHandler(async (req, res) => {
 // @desc    Get all appointments
 // @route   GET /api/appointments
 exports.getAllAppointments = asyncHandler(async (req, res) => {
-  const { search, status, date } = req.query;
+  const { search, status, date, page = 1, limit = 50 } = req.query;
 
   let query = {};
   if (search) {
     query.$or = [
       { patient: { $regex: search, $options: "i" } },
-      { doctor: { $regex: search, $options: "i" } },
+      { doctor:  { $regex: search, $options: "i" } },
     ];
   }
 
   if (status) query.status = status;
-  if (date) query.date = date;
 
-  const appointments = await Appointment.find(query).sort({ createdAt: -1 });
+  // ✅ FIX: Proper date range comparison (string → Date)
+  if (date) {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    query.date = { $gte: startOfDay, $lte: endOfDay };
+  }
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const total = await Appointment.countDocuments(query);
+
+  const appointments = await Appointment.find(query)
+    .sort({ date: -1, createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
 
   return res.status(200).json(
-    new ApiResponse(200, appointments, "Appointments fetched successfully")
+    new ApiResponse(200, {
+      appointments,
+      pagination: {
+        total,
+        pages: Math.ceil(total / parseInt(limit)),
+        currentPage: parseInt(page),
+        limit: parseInt(limit),
+      },
+    }, "Appointments fetched successfully")
   );
 });
 
@@ -63,7 +89,7 @@ exports.getAppointmentById = asyncHandler(async (req, res) => {
 // @desc    Update appointment
 // @route   PUT /api/appointments/:id
 exports.updateAppointment = asyncHandler(async (req, res) => {
-  const { patient, doctor, dept, date, time, status, reason } = req.body;
+  const { patient, doctor, dept, date, time, status, reason, type, priority } = req.body;
 
   let appointment = await Appointment.findById(req.params.id);
 
@@ -71,14 +97,15 @@ exports.updateAppointment = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Appointment not found");
   }
 
-  // Update fields
-  if (patient) appointment.patient = patient;
-  if (doctor) appointment.doctor = doctor;
-  if (dept) appointment.dept = dept;
-  if (date) appointment.date = date;
-  if (time) appointment.time = time;
-  if (status) appointment.status = status;
-  if (reason) appointment.reason = reason;
+  if (patient)   appointment.patient  = patient;
+  if (doctor)    appointment.doctor   = doctor;
+  if (dept)      appointment.dept     = dept;
+  if (date)      appointment.date     = date;
+  if (time)      appointment.time     = time;
+  if (status)    appointment.status   = status;
+  if (reason)    appointment.reason   = reason;
+  if (type)      appointment.type     = type;
+  if (priority)  appointment.priority = priority;
 
   appointment = await appointment.save();
 
@@ -120,9 +147,18 @@ exports.getPatientAppointments = asyncHandler(async (req, res) => {
   const Patient = require("../models/Patient");
   const patient = await Patient.findById(req.params.patientId);
   if (!patient) throw new ApiError(404, "Patient not found");
-  
-  const appointments = await Appointment.find({ patient: patient.name }).sort({ date: -1 });
-  return res.status(200).json(new ApiResponse(200, appointments, "Patient appointments fetched successfully"));
+
+  // ✅ FIX: Search by both patientId (ObjectId) and name string for compatibility
+  const appointments = await Appointment.find({
+    $or: [
+      { patientId: patient._id },
+      { patient: patient.name },
+    ],
+  }).sort({ date: -1 });
+
+  return res.status(200).json(
+    new ApiResponse(200, appointments, "Patient appointments fetched successfully")
+  );
 });
 
 // @desc    Get doctor appointments
@@ -132,8 +168,17 @@ exports.getDoctorAppointments = asyncHandler(async (req, res) => {
   const doctor = await Doctor.findById(req.params.doctorId);
   if (!doctor) throw new ApiError(404, "Doctor not found");
 
-  const appointments = await Appointment.find({ doctor: doctor.name }).sort({ date: -1 });
-  return res.status(200).json(new ApiResponse(200, appointments, "Doctor appointments fetched successfully"));
+  // ✅ FIX: Search by both doctorId (ObjectId) and name string for compatibility
+  const appointments = await Appointment.find({
+    $or: [
+      { doctorId: doctor._id },
+      { doctor: doctor.name },
+    ],
+  }).sort({ date: -1 });
+
+  return res.status(200).json(
+    new ApiResponse(200, appointments, "Doctor appointments fetched successfully")
+  );
 });
 
 // @desc    Cancel appointment
@@ -145,5 +190,7 @@ exports.cancelAppointment = asyncHandler(async (req, res) => {
     { new: true }
   );
   if (!appointment) throw new ApiError(404, "Appointment not found");
-  return res.status(200).json(new ApiResponse(200, appointment, "Appointment cancelled successfully"));
+  return res.status(200).json(
+    new ApiResponse(200, appointment, "Appointment cancelled successfully")
+  );
 });

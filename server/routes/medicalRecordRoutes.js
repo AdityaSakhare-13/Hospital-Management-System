@@ -7,6 +7,6 @@ const router = express.Router();
 router.use(protect);
 
 router.get("/patient/:patientId", getPatientRecords);
-router.post("/", authorize("Doctor", "Admin", "Receptionist"), createRecord);
+router.post("/", authorize("doctor", "admin", "reception"), createRecord);
 
 module.exports = router;

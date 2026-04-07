@@ -61,3 +61,12 @@ export const getDoctorStats = async () => {
     throw error.response?.data || error.message;
   }
 };
+// Get doctor by user ID
+export const getDoctorByUserId = async (userId) => {
+  try {
+    const response = await axios.get(`/doctors/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};

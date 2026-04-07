@@ -62,7 +62,7 @@ const PatientHandler = () => {
         await API.post("/patients", form);
         alert("Patient registered successfully! ✅");
       }
-      
+
       // Reset form and refresh list
       setForm({
         name: "",
@@ -126,14 +126,14 @@ const PatientHandler = () => {
 
   return (
     <div className="space-y-8 animate-in mt-10 fade-in duration-500 pb-10">
-      
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Patient Registry</h2>
           <p className="text-slate-500 font-medium text-xs mt-1">Integrated with Hospital HMS Cloud Database.</p>
         </div>
-        
+
         {/* Search Bar - Backend Integrated */}
         <div className="relative group w-full md:w-80">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-purple-500 transition-colors pointer-events-none" />
@@ -148,9 +148,9 @@ const PatientHandler = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         {/* FORM SECTION */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="lg:col-span-4 bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8 h-fit lg:sticky lg:top-24"
@@ -180,25 +180,25 @@ const PatientHandler = () => {
               </div>
             </div>
 
-        <input
-          type="number"
-          name="age"
-          placeholder="Age"
-          value={form.age}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
+            <input
+              type="number"
+              name="age"
+              placeholder="Age"
+              value={form.age}
+              onChange={handleChange}
+              className="border p-2 rounded"
+            />
 
-        <select
-          name="gender"
-          value={form.gender}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        >
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-          <option value="Other">Other</option>
-        </select>
+            <select
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              className="border p-2 rounded"
+            >
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -218,13 +218,13 @@ const PatientHandler = () => {
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Blood Group</label>
                 <div className="relative group">
-                   <Droplet className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-purple-500 transition-colors" size={14} />
-                   <select
+                  <Droplet className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-purple-500 transition-colors" size={14} />
+                  <select
                     name="bloodGroup"
                     value={form.bloodGroup}
                     onChange={handleChange}
                     className="w-full bg-slate-50 border border-transparent rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold text-slate-900 outline-none transition-all focus:bg-white focus:border-purple-200 focus:ring-4 focus:ring-purple-50 appearance-none"
-                   >
+                  >
                     <option value="A+">A+</option>
                     <option value="A-">A-</option>
                     <option value="B+">B+</option>
@@ -270,15 +270,14 @@ const PatientHandler = () => {
 
             <button
               onClick={handleSubmit}
-              className={`w-full mt-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 ${
-                editId !== null ? "bg-purple-600 text-white shadow-purple-500/20" : "bg-slate-900 text-white"
-              }`}
+              className={`w-full mt-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 ${editId !== null ? "bg-purple-600 text-white shadow-purple-500/20" : "bg-slate-900 text-white"
+                }`}
             >
               {editId !== null ? <Save size={14} /> : <UserPlus size={14} />}
               {editId !== null ? "Update Cloud Record" : "Register to Cloud"}
             </button>
             {editId !== null && (
-              <button 
+              <button
                 onClick={() => {
                   setEditId(null);
                   setForm({ name: "", age: "", gender: "Male", contact: "", address: "", bloodGroup: "O+", medicalHistory: "" });
@@ -292,7 +291,7 @@ const PatientHandler = () => {
         </motion.div>
 
         {/* LIST SECTION */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="lg:col-span-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]"
@@ -309,10 +308,10 @@ const PatientHandler = () => {
 
           <div className="p-4 flex-1">
             {loading ? (
-               <div className="py-20 text-center flex flex-col items-center">
-                  <div className="h-10 w-10 border-4 border-purple-100 border-t-purple-500 rounded-full animate-spin mb-4" />
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Querying database...</p>
-               </div>
+              <div className="py-20 text-center flex flex-col items-center">
+                <div className="h-10 w-10 border-4 border-purple-100 border-t-purple-500 rounded-full animate-spin mb-4" />
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Querying database...</p>
+              </div>
             ) : patients.length === 0 ? (
               <div className="py-20 text-center flex flex-col items-center">
                 <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 mb-2">
@@ -338,7 +337,7 @@ const PatientHandler = () => {
                         </div>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5">
                           <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1 uppercase">
-                             {p.age} Yrs • {p.gender}
+                            {p.age} Yrs • {p.gender}
                           </p>
                           <span className="h-1 w-1 rounded-full bg-slate-300 hidden sm:block" />
                           <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1 uppercase tracking-tight">

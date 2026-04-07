@@ -21,7 +21,9 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
     date: { $gte: today, $lt: tomorrow },
   });
 
-  const totalRevenueData = await Expense.aggregate([
+  // ✅ FIX: Use Billing (Paid) for revenue, not Expense
+  const totalRevenueData = await Billing.aggregate([
+    { $match: { $or: [{ paymentStatus: "Paid" }, { status: "Paid" }] } },
     { $group: { _id: null, total: { $sum: "$amount" } } },
   ]);
   const totalRevenue = totalRevenueData[0]?.total || 0;
@@ -29,16 +31,17 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
   const recentPatients = await Patient.find()
     .sort({ createdAt: -1 })
     .limit(5)
-    .select("name gender age status department");
+    .select("name gender age status department createdAt");
 
   const onDutyDoctors = await Doctor.find({ isOnDuty: true })
     .limit(5)
     .select("name specialization shift rating");
 
-  // Expense breakdown by category (Pie Chart)
-  const revenueByDept = await Expense.aggregate([
-    { $group: { _id: "$category", value: { $sum: "$amount" } } },
-    { $project: { name: "$_id", value: 1, _id: 0 } }
+  // Revenue breakdown by billing type for pie chart
+  const revenueByDept = await Billing.aggregate([
+    { $match: { $or: [{ paymentStatus: "Paid" }, { status: "Paid" }] } },
+    { $group: { _id: "$type", value: { $sum: "$amount" } } },
+    { $project: { name: "$_id", value: 1, _id: 0 } },
   ]);
 
   return res.status(200).json(
@@ -96,6 +99,7 @@ exports.getAppointmentChartData = asyncHandler(async (req, res) => {
     data = raw.map((r, i) => ({ label: `W${i + 1}`, appointments: r.appointments }));
 
   } else {
+    // year
     start = new Date(now.getFullYear(), 0, 1);
     raw = await Appointment.aggregate([
       { $match: { date: { $gte: start, $lte: now } } },
@@ -111,7 +115,7 @@ exports.getAppointmentChartData = asyncHandler(async (req, res) => {
 });
 
 // @desc    Global search for patients and doctors
-// @route   GET /api/dashboard/search
+// @route   GET /api/dashboard/search?query=
 exports.globalSearch = asyncHandler(async (req, res) => {
   const { query } = req.query;
   if (!query) {
@@ -121,11 +125,11 @@ exports.globalSearch = asyncHandler(async (req, res) => {
   const regex = new RegExp(query, "i");
 
   const patients = await Patient.find({
-    $or: [{ name: regex }, { contact: regex }, { email: regex }]
+    $or: [{ name: regex }, { contact: regex }],
   }).limit(5).select("name status _id");
 
   const doctors = await Doctor.find({
-    $or: [{ name: regex }, { specialization: regex }]
+    $or: [{ name: regex }, { specialization: regex }],
   }).limit(5).select("name specialization isOnDuty _id");
 
   return res.status(200).json(

@@ -6,7 +6,7 @@ import API from "../../../api/axios";
 
 const ReceptionDashboard = () => {
   const navigate = useNavigate();
-  
+
   const [data, setData] = useState({
     patients: [],
     appointments: [],
@@ -18,17 +18,21 @@ const ReceptionDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [patientsRes, appointmentsRes, billingRes,queueRes] = await Promise.all([
+      const [patientsRes, appointmentsRes, billingRes, queueRes] = await Promise.all([
         API.get("/patients"),
         API.get("/appointments"),
         API.get("/bills/stats"),
-         API.get("/queue") 
+        API.get("/queue")
       ]);
 
+      const patientsData = patientsRes.data?.data;
+      const appointmentsData = appointmentsRes.data?.data;
+      const queueData = queueRes.data?.data;
+
       setData({
-        patients: patientsRes.data?.data || [],
-        appointments: appointmentsRes.data?.data || [],
-         queue: queueRes.data?.data || [], // Queue typically separate but we can keep it as mock for now or fetch if route exists
+        patients: Array.isArray(patientsData) ? patientsData : (patientsData?.patients || []),
+        appointments: Array.isArray(appointmentsData) ? appointmentsData : (appointmentsData?.appointments || []),
+        queue: Array.isArray(queueData) ? queueData : [],
         billingStats: billingRes.data?.data?.summary || { totalRevenue: 0, totalPending: 0 }
       });
     } catch (err) {
@@ -99,7 +103,7 @@ const ReceptionDashboard = () => {
 
   return (
     <div className="space-y-8 pb-10 animate-in fade-in duration-500">
-      
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-black tracking-tight text-slate-900">Reception Dashboard</h1>
@@ -189,7 +193,7 @@ const ReceptionDashboard = () => {
             ) : (
               data.patients.slice(0, 5).map((p, i) => (
                 <div key={i} className="flex justify-between p-3 rounded-xl bg-slate-50/50 border border-transparent hover:border-blue-100 hover:bg-white transition-all group">
-                   <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-black group-hover:bg-blue-500 group-hover:text-white transition-colors">
                       {p.name?.charAt(0) || "U"}
                     </div>
@@ -207,28 +211,28 @@ const ReceptionDashboard = () => {
         </div>
       </div>
 
-       {/* Secondary Statistics Bar */}
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <div className="bg-emerald-50 rounded-3xl p-6 border border-emerald-100 flex items-center justify-between group overflow-hidden relative">
-             <div className="relative z-10">
-                <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-1">Clinic Revenue</p>
-                <h3 className="text-2xl font-black text-slate-900">₹{data.billingStats.totalRevenue.toLocaleString('en-IN')}</h3>
-                <button onClick={() => navigate('/reception/billing')} className="mt-4 text-[10px] font-black bg-emerald-500 text-white px-4 py-2 rounded-xl uppercase tracking-widest hover:scale-105 transition-all">View Billing Desk</button>
-             </div>
-             <CreditCard className="text-emerald-200 absolute -right-6 -bottom-6 w-32 h-32 rotate-12 group-hover:rotate-0 transition-transform duration-500" />
+      {/* Secondary Statistics Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div className="bg-emerald-50 rounded-3xl p-6 border border-emerald-100 flex items-center justify-between group overflow-hidden relative">
+          <div className="relative z-10">
+            <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-1">Clinic Revenue</p>
+            <h3 className="text-2xl font-black text-slate-900">₹{data.billingStats.totalRevenue.toLocaleString('en-IN')}</h3>
+            <button onClick={() => navigate('/reception/billing')} className="mt-4 text-[10px] font-black bg-emerald-500 text-white px-4 py-2 rounded-xl uppercase tracking-widest hover:scale-105 transition-all">View Billing Desk</button>
           </div>
-          <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 flex items-center justify-between group overflow-hidden relative shadow-xl">
-             <div className="relative z-10">
-                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">System Health</p>
-                <h3 className="text-xl font-black text-white">Live Cloud Sync</h3>
-                <div className="flex items-center gap-2 mt-4">
-                   <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                   <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Active Connection</span>
-                </div>
-             </div>
-             <Calendar className="text-white/5 absolute -right-6 -bottom-6 w-32 h-32 -rotate-12 group-hover:rotate-0 transition-transform duration-500" />
+          <CreditCard className="text-emerald-200 absolute -right-6 -bottom-6 w-32 h-32 rotate-12 group-hover:rotate-0 transition-transform duration-500" />
+        </div>
+        <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 flex items-center justify-between group overflow-hidden relative shadow-xl">
+          <div className="relative z-10">
+            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">System Health</p>
+            <h3 className="text-xl font-black text-white">Live Cloud Sync</h3>
+            <div className="flex items-center gap-2 mt-4">
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Active Connection</span>
+            </div>
           </div>
-       </div>
+          <Calendar className="text-white/5 absolute -right-6 -bottom-6 w-32 h-32 -rotate-12 group-hover:rotate-0 transition-transform duration-500" />
+        </div>
+      </div>
 
       {/* Quick Desk Actions Bar */}
       <div className="bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group mt-8">
@@ -236,7 +240,7 @@ const ReceptionDashboard = () => {
           <h2 className="text-xl font-black text-white uppercase tracking-tighter">Medical Front Desk Console</h2>
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">Manage registration & bookings efficiently.</p>
         </div>
-        
+
         <div className="flex flex-wrap items-center justify-center gap-3 relative z-10">
           <button onClick={() => navigate("/reception/patients")} className="bg-white text-slate-900 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-500 hover:text-white transition-all hover:shadow-xl hover:shadow-purple-500/20 active:scale-95">
             New Registration

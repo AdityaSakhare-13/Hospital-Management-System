@@ -48,6 +48,66 @@ function MyBills() {
       total: bills.reduce((acc, curr) => acc + (curr.amount || 0), 0)
    }
 
+   // ── Download a single invoice as formatted .txt ──
+   const downloadInvoice = (bill) => {
+      const invoiceId = bill._id?.slice(-8).toUpperCase() || 'INV-0000'
+      const dateStr = new Date(bill.date || bill.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })
+      const text = [
+         '═══════════════════════════════════════════',
+         '          HOSPITAL MANAGEMENT SYSTEM       ',
+         '                 INVOICE                   ',
+         '═══════════════════════════════════════════',
+         '',
+         `  Invoice No    :  #${invoiceId}`,
+         `  Date          :  ${dateStr}`,
+         `  Service       :  ${bill.service || bill.notes || 'Medical Service'}`,
+         `  Type          :  ${bill.type || 'General'}`,
+         '',
+         '───────────────────────────────────────────',
+         `  Amount        :  ₹${(bill.amount || 0).toLocaleString('en-IN')}`,
+         `  Payment Status:  ${bill.paymentStatus || bill.status || 'N/A'}`,
+         `  Payment Method:  ${bill.paymentMethod || 'N/A'}`,
+         '───────────────────────────────────────────',
+         '',
+         `  Patient       :  ${bill.patientName || 'N/A'}`,
+         `  Department    :  ${bill.department || 'N/A'}`,
+         '',
+         '═══════════════════════════════════════════',
+         `  Generated on  :  ${new Date().toLocaleString('en-IN')}`,
+         '  This is a computer-generated invoice.',
+         '  No signature required.',
+         '═══════════════════════════════════════════',
+      ].join('\n')
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url
+      a.download = `Invoice_${invoiceId}_${new Date().toISOString().slice(0, 10)}.txt`
+      a.click(); URL.revokeObjectURL(url)
+   }
+
+   // ── Download full billing statement as .csv ──
+   const downloadStatement = () => {
+      if (!bills.length) return
+      const header = 'Invoice ID,Service,Date,Amount (₹),Status,Payment Method,Type'
+      const rows = bills.map(b => {
+         const id = b._id?.slice(-8).toUpperCase() || 'INV-0000'
+         const svc = (b.service || b.notes || 'Medical Service').replace(/"/g, '""')
+         const dt = new Date(b.date || b.createdAt).toLocaleDateString('en-IN')
+         const amt = b.amount || 0
+         const st = b.paymentStatus || b.status || 'N/A'
+         const pm = b.paymentMethod || 'N/A'
+         const tp = b.type || 'General'
+         return `"${id}","${svc}","${dt}",${amt},"${st}","${pm}","${tp}"`
+      })
+      const footer = `\n\n"TOTAL","","",${stats.total},"","",""`
+      const csv = header + '\n' + rows.join('\n') + footer
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url
+      a.download = `Billing_Statement_${new Date().toISOString().slice(0, 10)}.csv`
+      a.click(); URL.revokeObjectURL(url)
+   }
+
    const tableHeaders = ['Invoice ID', 'Description', 'Date', 'Amount', 'Status & Action']
 
    const renderBillRow = (bill) => (
@@ -79,7 +139,10 @@ function MyBills() {
                    }`}>
                   {bill.paymentStatus}
                </span>
-               <button className="p-2.5 text-slate-300 hover:text-slate-950 hover:bg-slate-100 rounded-xl transition-all" title="Download Invoice">
+               <button
+                  onClick={() => downloadInvoice(bill)}
+                  className="p-2.5 text-slate-300 hover:text-slate-950 hover:bg-slate-100 rounded-xl transition-all" title="Download Invoice"
+               >
                   <Download size={18} strokeWidth={3} />
                </button>
             </div>
@@ -149,7 +212,11 @@ function MyBills() {
                <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden min-h-[400px]">
                   <div className="p-6 sm:p-8 border-b border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-5">
                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-l-4 border-emerald-500 pl-4 leading-none truncate">Billing History</h3>
-                     <button className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all outline-none">
+                     <button
+                        onClick={downloadStatement}
+                        disabled={!bills.length}
+                        className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+                     >
                         Download Statement <Download size={16} strokeWidth={3} />
                      </button>
                   </div>
