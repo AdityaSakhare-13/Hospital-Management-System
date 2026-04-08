@@ -2,6 +2,8 @@ const Appointment = require("../models/Appointment");
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
+const logService = require("../services/logService");
+const notificationService = require("../services/notificationService");
 
 // @desc    Create appointment
 // @route   POST /api/appointments
@@ -21,6 +23,47 @@ exports.createAppointment = asyncHandler(async (req, res) => {
     type: type || "Consultation",
     priority: priority || "Normal",
   });
+
+  // --- Audit Log ---
+  if (req.user) {
+    await logService.createLog({
+      action: "BOOK_APPOINTMENT",
+      performedBy: req.user._id,
+      appointmentId: appointment._id,
+      details: `Appointment booked for ${patient} with Dr. ${doctor} on ${date}`,
+      ipAddress: req.ip,
+    });
+  }
+
+  // --- Notifications based on who booked ---
+  if (req.user) {
+    const bookerRole = req.user.role;
+    const apptRef = { id: appointment._id, model: "Appointment" };
+    const formattedDate = date ? new Date(date).toLocaleDateString() : "TBD";
+    const msg = `New appointment: ${patient} with Dr. ${doctor} on ${formattedDate}`;
+
+    if (bookerRole === "patient") {
+      // Patient books → notify reception, doctor, admin
+      await notificationService.notifyRoles(["reception", "admin"], msg, "booking", apptRef);
+      if (doctorId) {
+        const Doctor = require("../models/Doctor");
+        const doc = await Doctor.findById(doctorId).populate("userId");
+        if (doc && doc.userId) {
+          await notificationService.notifyUser(doc.userId._id || doc.userId, "doctor", msg, "booking", apptRef);
+        }
+      }
+    } else if (bookerRole === "reception") {
+      // Reception books → notify doctor, admin
+      await notificationService.notifyRoles(["admin"], msg, "booking", apptRef);
+      if (doctorId) {
+        const Doctor = require("../models/Doctor");
+        const doc = await Doctor.findById(doctorId).populate("userId");
+        if (doc && doc.userId) {
+          await notificationService.notifyUser(doc.userId._id || doc.userId, "doctor", msg, "booking", apptRef);
+        }
+      }
+    }
+  }
 
   return res.status(201).json(
     new ApiResponse(201, appointment, "Appointment scheduled successfully")
@@ -190,6 +233,40 @@ exports.cancelAppointment = asyncHandler(async (req, res) => {
     { new: true }
   );
   if (!appointment) throw new ApiError(404, "Appointment not found");
+
+  // --- Audit Log ---
+  if (req.user) {
+    await logService.createLog({
+      action: "CANCEL_APPOINTMENT",
+      performedBy: req.user._id,
+      appointmentId: appointment._id,
+      details: `Appointment cancelled: ${appointment.patient} with Dr. ${appointment.doctor}`,
+      ipAddress: req.ip,
+    });
+  }
+
+  // --- Notifications ---
+  if (req.user) {
+    const cancellerRole = req.user.role;
+    const apptRef = { id: appointment._id, model: "Appointment" };
+    const msg = `Appointment cancelled: ${appointment.patient} with Dr. ${appointment.doctor}`;
+
+    if (cancellerRole === "doctor") {
+      // Doctor cancels → notify patient and reception
+      await notificationService.notifyRoles(["reception"], msg, "cancellation", apptRef);
+      if (appointment.patientId) {
+        const Patient = require("../models/Patient");
+        const pat = await Patient.findById(appointment.patientId);
+        if (pat && pat.userId) {
+          await notificationService.notifyUser(pat.userId, "patient", msg, "cancellation", apptRef);
+        }
+      }
+    } else {
+      // Anyone else cancels → notify reception and admin
+      await notificationService.notifyRoles(["reception", "admin"], msg, "cancellation", apptRef);
+    }
+  }
+
   return res.status(200).json(
     new ApiResponse(200, appointment, "Appointment cancelled successfully")
   );

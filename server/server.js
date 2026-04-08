@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
@@ -17,6 +18,10 @@ const queueRoutes = require("./routes/queueRoutes");
 const userRoutes = require("./routes/userRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const documentRoutes = require("./routes/documentRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const doctorEventRoutes = require("./routes/doctorEventRoutes");
+const logRoutes = require("./routes/logRoutes");
 
 const errorHandler = require("./middleware/errorMiddleware");
 
@@ -30,6 +35,9 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
+
+// Serve static files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -46,6 +54,12 @@ app.use("/api/expenses", expenseRoutes);
 app.use("/api/reports", reportRoutes);
 
 app.use("/api/records", require("./routes/medicalRecordRoutes"));
+
+// New feature routes
+app.use("/api/documents", documentRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/doctor-events", doctorEventRoutes);
+app.use("/api/logs", logRoutes);
 
 // Root/Health Check
 app.get("/", (req, res) => {
