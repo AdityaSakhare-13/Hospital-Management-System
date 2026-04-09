@@ -16,13 +16,16 @@ import {
   MoreVertical,
   X,
   Check,
-  Loader2
+  Loader2,
+  Activity,
+  CalendarClock,
+  Trash2
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import ModernTable from './ModernTable'
 import useAuth from '../../../hooks/useAuth'
 import { getPatientByUserId } from '../../patients/patientApi'
-import { getPatientAppointments, createAppointment, cancelAppointment } from '../../appointments/appointmentApi'
+import { getPatientAppointments, createAppointment, cancelAppointment, updateAppointment } from '../../appointments/appointmentApi'
 import { getAllDoctors } from '../../doctors/doctorApi'
 import { toast } from 'react-toastify'
 
@@ -30,6 +33,7 @@ const departments = ['All', 'Cardiology', 'Neurology', 'Orthopedics', 'Dermatolo
 
 function MyAppointments() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
 
   const [view, setView] = useState('list')
@@ -38,11 +42,13 @@ function MyAppointments() {
   const [doctorList, setDoctorList] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState('upcoming')
+  const initialTab = new URLSearchParams(location.search).get('tab')
+  const [activeTab, setActiveTab] = useState(['upcoming', 'past'].includes(initialTab) ? initialTab : 'upcoming')
   const [searchQuery, setSearchQuery] = useState('')
   const [activeMenu, setActiveMenu] = useState(null)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [selectedDept, setSelectedDept] = useState('All')
+  const [rescheduleData, setRescheduleData] = useState(null)
 
   const filteredAppointments = appointments.filter(apt => {
     const matchesTab = activeTab === 'upcoming'
@@ -164,6 +170,42 @@ function MyAppointments() {
     }
   }
 
+  const handleReschedule = async (e) => {
+    e.preventDefault()
+    if (!rescheduleData.date || !rescheduleData.time) {
+      toast.warning('Please select a new date and time')
+      return
+    }
+    try {
+      setSubmitting(true)
+      await updateAppointment(rescheduleData.id, {
+        date: rescheduleData.date,
+        time: rescheduleData.time,
+        status: 'Rescheduled'
+      })
+      toast.success('Your appointment time has been changed!')
+      setRescheduleData(null)
+      // Refresh list
+      const aRes = await getPatientAppointments(patientData._id)
+      const apts = aRes.data.appointments || aRes.data || []
+      const formatted = apts.map(apt => ({
+          id: apt._id,
+          doctor: apt.doctor || 'N/A',
+          dept: apt.dept || 'General',
+          date: apt.date ? apt.date.split('T')[0] : 'N/A',
+          time: apt.time || 'N/A',
+          status: apt.status ? (apt.status.charAt(0).toUpperCase() + apt.status.slice(1)) : 'Pending',
+          type: apt.type || 'In-Clinic',
+          location: apt.location || 'Hospital Clinic'
+      }))
+      setAppointments(formatted)
+    } catch (err) {
+      toast.error('Could not change the time. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const handleViewDetails = (apt) => {
     toast.info(
       <div>
@@ -197,58 +239,88 @@ function MyAppointments() {
     )
   }
 
-  const tableHeaders = ['Doctor / Specialist', 'Dept', 'Date & Time', 'Status', 'Actions']
+  const tableHeaders = ['Doctor / Specialist', 'Type', 'Unit / Location', 'Date & Time', 'Status', 'Actions']
 
-  const renderAptRow = (apt) => (
-    <tr key={apt.id} className="group hover:bg-slate-50/50 transition-all">
-      <td className="px-6 py-4 border-none text-left">
-        <div className="flex items-center gap-4">
-          <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xs border border-slate-200 group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-400 transition-all shrink-0">
-            {apt.doctor.split(' ').map(n => n[0]).join('')}
-          </div>
-          <div className="min-w-0">
-            <h4 className="text-sm font-black text-slate-900 leading-tight truncate max-w-[200px]">{apt.doctor}</h4>
-            <div className="flex items-center gap-2 lg:hidden">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{apt.dept}</span>
+  const renderAptRow = (apt) => {
+    const docInitials = apt.doctor.split(' ').filter(n => n.length > 0).map(n => n[0]).join('')
+    return (
+      <tr key={apt.id} className="hover:bg-slate-50/50 transition-all group">
+        <td className="px-6 py-4 border-none text-left">
+          <div className="flex items-center gap-4">
+            <div className="p-2.5 bg-slate-100 text-slate-400 rounded-xl group-hover:bg-emerald-500 group-hover:text-white transition-all border border-slate-200 group-hover:border-emerald-400 shrink-0">
+              <Stethoscope size={16} strokeWidth={3} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-black text-slate-900 leading-tight truncate max-w-[200px]">{apt.doctor}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID: {apt.id.slice(-6).toUpperCase()}</p>
             </div>
           </div>
-        </div>
-      </td>
-      <td className="px-6 py-4 hidden md:table-cell text-center">
-        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">{apt.dept}</span>
-      </td>
-      <td className="px-6 py-4 text-center">
-        <div className="flex flex-col items-center justify-center gap-1">
-          <div className="text-[13px] font-black text-slate-700 leading-none">
-            {new Date(apt.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        </td>
+        <td className="px-6 py-4 text-center">
+          <span className="inline-flex px-3 py-1.5 rounded-lg text-[9px] font-black bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-widest">
+            {apt.type}
+          </span>
+        </td>
+        <td className="px-6 py-4 text-center">
+          <div className="flex flex-col items-center">
+            <p className="text-[13px] font-black text-slate-700 leading-tight">{apt.dept}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-70">{apt.location || 'Our Hospital'}</p>
           </div>
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-            {apt.time}
+        </td>
+        <td className="px-6 py-4 text-center">
+          <div className="flex flex-col items-center">
+            <p className="text-[13px] font-black text-slate-700 leading-tight">
+              {new Date(apt.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{apt.time}</p>
           </div>
-        </div>
-      </td>
-      <td className="px-6 py-4 text-center">
-        <StatusBadge status={apt.status} />
-      </td>
-      <td className="px-6 py-4 text-center">
-        <div className="relative inline-block">
-          <button onClick={() => setActiveMenu(activeMenu === apt.id ? null : apt.id)} className="p-2 rounded-xl transition-all text-slate-300 hover:text-slate-900 hover:bg-slate-100">
-            <MoreVertical size={18} strokeWidth={3} />
-          </button>
-          <AnimatePresence>
-            {activeMenu === apt.id && (
-              <motion.div initial={{ opacity: 0, scale: 0.95, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95, x: 10 }} className="absolute right-full top-0 mr-3 w-40 bg-white rounded-2xl border border-slate-100 shadow-2xl z-[1000] py-2 origin-right">
-                <button onClick={() => handleViewDetails(apt)} className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-emerald-500 transition-all flex items-center gap-3"><Info size={14} strokeWidth={3} /> Details</button>
-                {(apt.status === 'Confirmed' || apt.status === 'Pending') && (
-                  <button onClick={() => handleCancelVisit(apt.id)} className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 transition-all flex items-center gap-3 border-t border-slate-50"><XCircle size={14} strokeWidth={3} /> Cancel</button>
+        </td>
+        <td className="px-6 py-4 text-center">
+          <StatusBadge status={apt.status} />
+        </td>
+        <td className="px-6 py-4 text-center">
+          <div className="flex justify-center items-center gap-3">
+            <div className="relative inline-block">
+              <button 
+                onClick={() => setActiveMenu(activeMenu === apt.id ? null : apt.id)} 
+                className="p-2 rounded-xl transition-all text-slate-300 hover:text-slate-900 hover:bg-slate-100 border border-slate-100"
+              >
+                <MoreVertical size={18} strokeWidth={3} />
+              </button>
+              <AnimatePresence>
+                {activeMenu === apt.id && (
+                  <motion.div initial={{ opacity: 0, scale: 0.95, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95, x: 10 }} className="absolute right-full top-0 mr-3 w-48 bg-white rounded-2xl border border-slate-100 shadow-2xl z-[1000] py-2 origin-right text-left">
+                    <button onClick={() => handleViewDetails(apt)} className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-emerald-500 transition-all flex items-center gap-3"><Info size={14} strokeWidth={3} /> View Details</button>
+                    
+                    {(apt.status === 'Confirmed' || apt.status === 'Pending' || apt.status === 'Rescheduled') && (
+                      <>
+                        <button 
+                          onClick={() => {
+                            const doc = doctorList.find(d => d.name === apt.doctor || d.specialization === apt.dept);
+                            setRescheduleData({ ...apt, doctorId: doc?._id });
+                            setActiveMenu(null);
+                          }} 
+                          className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-amber-600 hover:bg-amber-50 transition-all flex items-center gap-3 border-t border-slate-50"
+                        >
+                          <CalendarClock size={14} strokeWidth={3} /> Change Time
+                        </button>
+                        <button 
+                          onClick={() => handleCancelVisit(apt.id)} 
+                          className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 transition-all flex items-center gap-3 border-t border-slate-50"
+                        >
+                          <Trash2 size={14} strokeWidth={3} /> Cancel Visit
+                        </button>
+                      </>
+                    )}
+                  </motion.div>
                 )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </td>
-    </tr>
-  )
+              </AnimatePresence>
+            </div>
+          </div>
+        </td>
+      </tr>
+    )
+  }
 
   return (
     <div className="space-y-6 pb-10 animate-in fade-in duration-700 w-full px-2 sm:px-4 max-w-[100vw] overflow-x-hidden">
@@ -387,6 +459,87 @@ function MyAppointments() {
               </form>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 📅 Reschedule Modal */}
+      <AnimatePresence>
+        {rescheduleData && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setRescheduleData(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+              animate={{ opacity: 1, scale: 1, y: 0 }} 
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100"
+            >
+              <div className="p-8 border-b border-slate-50 bg-amber-50/30">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-200">
+                    <CalendarClock size={24} strokeWidth={3} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Change Appointment</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Select your new preferred time</p>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleReschedule} className="p-8 space-y-6">
+                <div className="space-y-4 text-left">
+                  <div className="space-y-2 text-left">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Pick a New Date</label>
+                    <input 
+                      required 
+                      type="date" 
+                      min={new Date().toISOString().split('T')[0]}
+                      value={rescheduleData.date} 
+                      onChange={e => setRescheduleData({...rescheduleData, date: e.target.value})}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-amber-400 transition-all" 
+                    />
+                  </div>
+                  <div className="space-y-2 text-left">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Pick a New Slot</label>
+                    <select 
+                      required 
+                      value={rescheduleData.time} 
+                      onChange={e => setRescheduleData({...rescheduleData, time: e.target.value})}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-amber-400 transition-all cursor-pointer"
+                    >
+                      {(() => {
+                        const doc = doctorList.find(d => d._id === rescheduleData.doctorId);
+                        const slots = doc ? getTimeSlots(doc.shift) : ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
+                        return slots.map(s => <option key={s} value={s}>{s}</option>);
+                      })()}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => setRescheduleData(null)}
+                    className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-400 text-[11px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all border-none outline-none"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={submitting}
+                    className="flex-[2] py-4 bg-slate-950 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-amber-500 transition-all shadow-xl active:scale-95 disabled:bg-slate-300 border-none outline-none"
+                  >
+                    {submitting ? <Loader2 className="animate-spin mx-auto text-white" size={18} strokeWidth={3} /> : 'Update Appointment'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
