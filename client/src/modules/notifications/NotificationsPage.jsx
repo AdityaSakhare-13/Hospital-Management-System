@@ -3,12 +3,15 @@ import { Bell, Clock, CheckCircle, Filter, Search, Loader2, ArrowLeft, CalendarC
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import useNotifications from '../../hooks/useNotifications';
+import useAuth from '../../hooks/useAuth';
 
 const NotificationsPage = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const { notifications, loading, markAsRead, markAllAsRead, refresh } = useNotifications();
     const [filter, setFilter] = useState('all'); // all, unread, bookings, cancellations
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedNotif, setSelectedNotif] = useState(null);
 
     const filteredNotifications = notifications.filter(n => {
         const matchesSearch = n.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -155,17 +158,37 @@ const NotificationsPage = () => {
                                                         onClick={() => markAsRead(n._id)}
                                                         className="flex items-center gap-1 text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-700 transition-colors"
                                                     >
-                                                        <CheckCircle size={11} /> Mark read
+                                                        <CheckCircle size={11} /> MARK READ
                                                     </button>
                                                 )}
                                                 {n.referenceId && (
                                                     <button
-                                                        onClick={() => navigate(n.role === 'admin' ? '/admin/appointments' : '/doctor/appointments')}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            const role = (user?.role || 'patient').toLowerCase();
+                                                            let query = '';
+                                                            if (['doctor', 'admin', 'reception'].includes(role)) {
+                                                                query = '?tab=All';
+                                                            } else if (role === 'patient') {
+                                                                query = n.type === 'cancellation' ? '?tab=past' : '?tab=upcoming';
+                                                            }
+                                                            navigate(`/${role}/appointments${query}`);
+                                                        }}
                                                         className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:text-emerald-800 transition-colors"
                                                     >
-                                                        View →
+                                                        VIEW →
                                                     </button>
                                                 )}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedNotif(n);
+                                                        if(!n.isRead) markAsRead(n._id);
+                                                    }}
+                                                    className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+                                                >
+                                                    Details
+                                                </button>
                                             </div>
                                         )}
                                     </div>
@@ -175,6 +198,116 @@ const NotificationsPage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Notification Detail Modal */}
+            <AnimatePresence>
+                {selectedNotif && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setSelectedNotif(null)}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200"
+                        >
+                            {/* Modal Header */}
+                            <div className={`p-6 border-b flex items-center justify-between ${getTypeConfig(selectedNotif.type).style}`}>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-12 w-12 rounded-2xl bg-white/50 flex items-center justify-center shadow-sm">
+                                        {(() => {
+                                            const Icon = getTypeConfig(selectedNotif.type).icon;
+                                            return <Icon size={24} />;
+                                        })()}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black uppercase tracking-widest text-[10px] opacity-70">
+                                            {getTypeConfig(selectedNotif.type).label} Detail
+                                        </h3>
+                                        <p className="text-sm font-bold truncate">Notification Reference</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedNotif(null)}
+                                    className="h-10 w-10 rounded-xl bg-white/20 hover:bg-white/40 flex items-center justify-center transition-all"
+                                >
+                                    <XCircle size={20} />
+                                </button>
+                            </div>
+
+                            {/* Modal Body */}
+                            <div className="p-8">
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Message</label>
+                                        <p className="text-lg font-bold text-slate-900 leading-relaxed italic">
+                                            "{selectedNotif.message}"
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6 pt-6 border-t border-slate-100">
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Time Received</label>
+                                            <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                                <Clock size={14} className="text-slate-400" />
+                                                {new Date(selectedNotif.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Date</label>
+                                            <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                                <CalendarCheck size={14} className="text-slate-400" />
+                                                {new Date(selectedNotif.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {selectedNotif.referenceId && (
+                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 mt-2">
+                                            <p className="text-xs font-medium text-slate-600">
+                                                This notification is linked to an active clinical record. You can view the full details in the appointments section.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-4">
+                                <button
+                                    onClick={() => setSelectedNotif(null)}
+                                    className="flex-1 py-3 rounded-2xl bg-white border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-all font-sans"
+                                >
+                                    Close
+                                </button>
+                                {selectedNotif.referenceId && (
+                                    <button
+                                        onClick={() => {
+                                            const role = (user?.role || 'patient').toLowerCase();
+                                            let query = '';
+                                            if (['doctor', 'admin', 'reception'].includes(role)) {
+                                                query = '?tab=All';
+                                            } else if (role === 'patient') {
+                                                query = selectedNotif.type === 'cancellation' ? '?tab=past' : '?tab=upcoming';
+                                            }
+                                            navigate(`/${role}/appointments${query}`);
+                                            setSelectedNotif(null);
+                                        }}
+                                        className="flex-1 py-3 rounded-2xl bg-emerald-500 text-white text-xs font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 font-sans"
+                                    >
+                                        VIEW APPOINTMENT
+                                    </button>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

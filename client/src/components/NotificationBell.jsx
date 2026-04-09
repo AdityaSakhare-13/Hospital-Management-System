@@ -130,6 +130,40 @@ const NotificationBell = () => {
                               <Clock size={9} />
                               {new Date(n.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                             </p>
+
+                            <div className="flex items-center gap-3 mt-2">
+                              {!n.isRead && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    markAsRead(n._id);
+                                  }}
+                                  className="flex items-center gap-1 text-[9px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-700 transition-colors"
+                                >
+                                  <Check size={10} /> MARK READ
+                                </button>
+                              )}
+                              {n.referenceId && (
+                                <Popover.Close asChild>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const role = (user?.role || 'patient').toLowerCase();
+                                      let query = '';
+                                      if (['doctor', 'admin', 'reception'].includes(role)) {
+                                        query = '?tab=All';
+                                      } else if (role === 'patient') {
+                                        query = n.type === 'cancellation' ? '?tab=past' : '?tab=upcoming';
+                                      }
+                                      navigate(`/${role}/appointments${query}`);
+                                    }}
+                                    className="text-[9px] font-black text-emerald-600 uppercase tracking-widest hover:text-emerald-800 transition-colors"
+                                  >
+                                    VIEW →
+                                  </button>
+                                </Popover.Close>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
