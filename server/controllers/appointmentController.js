@@ -45,8 +45,8 @@ exports.createAppointment = asyncHandler(async (req, res) => {
     const msg = `New appointment: ${patient} with Dr. ${doctor} on ${formattedDate}`;
 
     if (bookerRole === "patient") {
-      // Patient books → notify reception, doctor, admin
-      await notificationService.notifyRoles(["reception", "admin"], msg, "booking", apptRef);
+      // Patient books → notify reception
+      await notificationService.notifyRoles(["reception"], msg, "booking", apptRef);
       if (doctorId) {
         const Doctor = require("../models/Doctor");
         const doc = await Doctor.findById(doctorId).populate("userId");
@@ -55,10 +55,18 @@ exports.createAppointment = asyncHandler(async (req, res) => {
         }
       }
     } else if (bookerRole === "reception") {
-      // Reception books → notify doctor, admin
-      await notificationService.notifyRoles(["admin"], msg, "booking", apptRef);
+      // Reception books → notify doctor, patient (NOT admin)
+      
+      // 1. Notify Patient
+      if (patientId) {
+        const pat = await Patient.findById(patientId);
+        if (pat && pat.userId) {
+          await notificationService.notifyUser(pat.userId, "patient", msg, "booking", apptRef);
+        }
+      }
+
+      // 2. Notify Doctor
       if (doctorId) {
-        const Doctor = require("../models/Doctor");
         const doc = await Doctor.findById(doctorId).populate("userId");
         if (doc && doc.userId) {
           await notificationService.notifyUser(doc.userId._id || doc.userId, "doctor", msg, "booking", apptRef);
@@ -168,7 +176,7 @@ exports.updateAppointment = asyncHandler(async (req, res) => {
     if (appointment.patientId) {
       await notificationService.notifyUser(appointment.patientId, "patient", msg, "booking", { id: appointment._id, model: "Appointment" });
     }
-    await notificationService.notifyRoles(["reception", "admin"], `Appointment Rescheduled: ${appointment.patient} with Dr. ${appointment.doctor}`, "booking", { id: appointment._id, model: "Appointment" });
+    await notificationService.notifyRoles(["reception"], `Appointment Rescheduled: ${appointment.patient} with Dr. ${appointment.doctor}`, "booking", { id: appointment._id, model: "Appointment" });
   }
 
   // --- Status Change Notification ---
@@ -182,7 +190,7 @@ exports.updateAppointment = asyncHandler(async (req, res) => {
     const apptRef = { id: appointment._id, model: "Appointment" };
 
     // Notify Staff
-    await notificationService.notifyRoles(["reception", "admin"], msg, type, apptRef);
+    await notificationService.notifyRoles(["reception"], msg, type, apptRef);
 
     // Notify Patient
     if (appointment.patientId) {
@@ -319,8 +327,8 @@ exports.cancelAppointment = asyncHandler(async (req, res) => {
     const msg = `Appointment cancelled: ${appointment.patient} with Dr. ${appointment.doctor}`;
 
     if (cancellerRole === "doctor") {
-      // Doctor cancels → notify patient, reception, and admin
-      await notificationService.notifyRoles(["reception", "admin"], msg, "cancellation", apptRef);
+      // Doctor cancels → notify patient and reception
+      await notificationService.notifyRoles(["reception"], msg, "cancellation", apptRef);
       if (appointment.patientId) {
         const Patient = require("../models/Patient");
         const pat = await Patient.findById(appointment.patientId);
@@ -329,8 +337,8 @@ exports.cancelAppointment = asyncHandler(async (req, res) => {
         }
       }
     } else {
-      // Anyone else cancels (like Patient) → notify reception, admin, and DOCTOR
-      await notificationService.notifyRoles(["reception", "admin"], msg, "cancellation", apptRef);
+      // Anyone else cancels (like Patient) → notify reception and DOCTOR
+      await notificationService.notifyRoles(["reception"], msg, "cancellation", apptRef);
 
       // Notify Patient (Confirmation for themselves or if Admin cancelled via this route)
       if (appointment.patientId) {

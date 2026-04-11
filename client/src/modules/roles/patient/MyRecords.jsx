@@ -53,7 +53,7 @@ function MyRecords() {
    const fetchRecords = async () => {
       try {
          setIsLoading(true)
-         const pRes = await getPatientByUserId(user.id)
+         const pRes = await getPatientByUserId(user?.id)
          const patientId = pRes.data?._id
          if (!patientId) return
          const res = await getPatientRecords(patientId)
@@ -80,7 +80,7 @@ function MyRecords() {
 
    useEffect(() => {
       if (user?.id) fetchRecords()
-   }, [user.id])
+   }, [user?.id])
 
    const filteredRecords = medicalRecords.filter(record => {
       const matchesSearch = record.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -157,7 +157,7 @@ function MyRecords() {
       
       try {
          setIsUploading(true)
-         const pRes = await getPatientByUserId(user.id)
+         const pRes = await getPatientByUserId(user?.id)
          const patientId = pRes.data?._id
          
          const formData = new FormData()
