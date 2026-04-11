@@ -38,6 +38,12 @@ exports.createDoctor = asyncHandler(async (req, res) => {
       password: password || "Doctor@123",
       role: "doctor",
     });
+  } else {
+    // 2.5 Ensure existing user has doctor role
+    if (user.role !== "doctor") {
+      user.role = "doctor";
+      await user.save();
+    }
   }
 
   // 3. Create Doctor profile linked to User
@@ -198,6 +204,7 @@ exports.updateDoctor = asyncHandler(async (req, res) => {
     if (email) user.email = email.toLowerCase();
     if (password) user.password = password; // Triggers hashing in pre-save hook
     
+    user.role = "doctor"; // 🛡️ Ensure role consistency
     await user.save();
   }
 
