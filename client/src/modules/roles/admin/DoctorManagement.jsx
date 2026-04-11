@@ -387,9 +387,9 @@ function DoctorManagement({ view }) {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-2">
+                    <div className="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar scroll-smooth">
                       {(formData.availability || []).map((slot, idx) => (
-                        <div key={idx} className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div key={idx} className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 animate-in slide-in-from-top-1 duration-200">
                           <select
                             value={slot.day}
                             onChange={e => {
@@ -397,7 +397,7 @@ function DoctorManagement({ view }) {
                               newAvail[idx].day = e.target.value
                               setFormData({ ...formData, availability: newAvail })
                             }}
-                            className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-emerald-400 min-w-[90px]"
+                            className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-emerald-400 min-w-[90px] shadow-sm"
                           >
                             {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
                           </select>
@@ -409,7 +409,7 @@ function DoctorManagement({ view }) {
                               newAvail[idx].startTime = e.target.value
                               setFormData({ ...formData, availability: newAvail })
                             }}
-                            className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-emerald-400"
+                            className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-emerald-400 shadow-sm"
                           />
                           <span className="text-slate-300 text-[9px] font-bold">TO</span>
                           <input
@@ -420,14 +420,14 @@ function DoctorManagement({ view }) {
                               newAvail[idx].endTime = e.target.value
                               setFormData({ ...formData, availability: newAvail })
                             }}
-                            className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-emerald-400"
+                            className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-emerald-400 shadow-sm"
                           />
                           <button
                             type="button"
                             onClick={() => {
                               setFormData({ ...formData, availability: formData.availability.filter((_, i) => i !== idx) })
                             }}
-                            className="ml-auto p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            className="ml-auto p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-100"
                           >
                             <Trash2 size={12} />
                           </button>
