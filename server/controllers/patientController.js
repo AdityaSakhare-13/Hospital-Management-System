@@ -59,14 +59,6 @@ exports.createPatient = asyncHandler(async (req, res) => {
     }
   });
 
-  // 🔔 Notify Admins about new patient record (added by staff)
-  await notificationService.notifyRoles(
-    ["admin"],
-    `New Patient Added by ${req.user.fullName}: ${patient.name}`,
-    "system",
-    { id: patient._id, model: "Patient" }
-  );
-
   return res.status(201).json(
     new ApiResponse(201, patient, "Patient record created successfully")
   );

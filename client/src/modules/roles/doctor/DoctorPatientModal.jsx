@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, User, FileText, Pill, Calendar, Activity, Eye, Phone, MapPin, AlertTriangle, DollarSign, Droplets, Download, Scissors, Clock, ChevronLeft, ChevronRight, Plus, Check, Loader2 } from 'lucide-react'
+import { X, User, FileText, Pill, Calendar, Activity, Eye, Phone, MapPin, Mail, AlertTriangle, DollarSign, Droplets, Download, Scissors, Clock, ChevronLeft, ChevronRight, Plus, Check, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import useAuth from '../../../hooks/useAuth'
 import { getDoctorByUserId } from '../../doctors/doctorApi'
