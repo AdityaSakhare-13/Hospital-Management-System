@@ -75,6 +75,12 @@ exports.createReceptionist = asyncHandler(async (req, res) => {
       password: password || "Reception@123",
       role: "reception",
     });
+  } else {
+    // 2.5 Ensure existing user has reception role
+    if (user.role !== "reception") {
+      user.role = "reception";
+      await user.save();
+    }
   }
 
   // 3. Create Receptionist profile
@@ -122,6 +128,7 @@ exports.updateReceptionist = asyncHandler(async (req, res) => {
     if (email) user.email = email.toLowerCase();
     if (password) user.password = password; // Triggers hashing in pre-save hook
     
+    user.role = "reception"; // 🛡️ Ensure role consistency
     await user.save();
   }
 

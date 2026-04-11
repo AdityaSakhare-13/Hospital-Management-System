@@ -31,6 +31,12 @@ exports.createPatient = asyncHandler(async (req, res) => {
         password: password || contact || "Patient@123", // Use provided password, fallback to contact
         role: "patient"
       });
+    } else {
+      // 2.5 Ensure existing user has patient role
+      if (user.role !== "patient") {
+        user.role = "patient";
+        await user.save();
+      }
     }
     finalUserId = user._id;
   }
@@ -204,6 +210,7 @@ exports.updatePatient = asyncHandler(async (req, res) => {
     if (email) user.email = email.toLowerCase();
     if (password) user.password = password; // Triggers hashing in pre-save hook
     
+    user.role = "patient"; // 🛡️ Ensure role consistency
     await user.save();
   }
 
