@@ -316,7 +316,6 @@ function DoctorManagement({ view }) {
                     { label: 'Full Name', key: 'name', type: 'text', placeholder: 'Dr. Jane Doe' },
                     { label: 'Email', key: 'email', type: 'email', placeholder: 'doctor@domain.com' },
                     { label: 'Contact', key: 'contact', type: 'tel', placeholder: '10-digit number' },
-                    { label: 'Experience', key: 'experience', type: 'text', placeholder: '5 Years' },
                   ].map(f => (
                     <div key={f.key}>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{f.label}</label>
@@ -334,6 +333,26 @@ function DoctorManagement({ view }) {
                       />
                     </div>
                   ))}
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Experience</label>
+                    <div className="relative group">
+                      <input
+                        required
+                        type="text"
+                        placeholder="5"
+                        value={formData.experience ? formData.experience.replace(/\D/g, '') : ''}
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setFormData({ ...formData, experience: val ? `${val} Years` : '' });
+                        }}
+                        className="w-full pl-4 pr-16 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-50 transition-all"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-slate-100 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-500 pointer-events-none group-focus-within:bg-emerald-100 group-focus-within:text-emerald-600 transition-colors">
+                        Years
+                      </div>
+                    </div>
+                  </div>
 
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Consultation Fees</label>
