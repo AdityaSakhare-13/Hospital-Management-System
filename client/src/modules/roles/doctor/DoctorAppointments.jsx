@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, CheckCircle2, Circle, AlertCircle, Clock, Filter, X, CalendarClock, Ban, Calendar, AlarmClock, FileText, Stethoscope, MoreVertical, Eye, User, Hash, Loader2 } from 'lucide-react'
+import { Search, CheckCircle2, Circle, AlertCircle, Clock, Filter, X, CalendarClock, Ban, Calendar, AlarmClock, FileText, Stethoscope, MoreVertical, Eye, User, Hash, Loader2, Video } from 'lucide-react'
 import useAuth from '../../../hooks/useAuth'
 import { getDoctorByUserId } from '../../doctors/doctorApi'
 import { getDoctorAppointments, updateAppointment, cancelAppointment as apiCancelAppointment } from '../../appointments/appointmentApi'
@@ -188,7 +188,84 @@ function CancelModal({ appointment, onClose, onConfirm }) {
   )
 }
 
-function ActionMenu({ appointment, onView, onMarkComplete, onReschedule, onCancel }) {
+function ConsultationModal({ appointment, onClose, onSave }) {
+  const [form, setForm] = useState({
+    meetingLink: appointment.meetingLink || '',
+    doctorNotes: appointment.doctorNotes || '',
+    status: appointment.status === 'Completed' ? 'Completed' : 'Completed'
+  })
+  const [submitting, setSubmitting] = useState(false)
+  
+  const handleSave = async () => {
+    setSubmitting(true)
+    await onSave(form)
+    setSubmitting(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md mx-4 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-blue-50/30">
+          <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Update Consultation</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-rose-500"><X size={18} /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
+            <div>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Consultation Mode</p>
+              <p className="text-xs font-black text-slate-700 uppercase tracking-tight">{appointment.consultationMode || 'Offline'}</p>
+            </div>
+            <div className={`h-8 w-8 rounded-xl flex items-center justify-center ${appointment.consultationMode === 'Online' ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
+              {appointment.consultationMode === 'Online' ? <Video size={14} /> : <User size={14} />}
+            </div>
+          </div>
+
+          {appointment.consultationMode === 'Online' && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+              <div className="flex justify-between items-end mb-1.5">
+                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Meeting Link (Google Meet)</label>
+                 <button 
+                  type="button" 
+                  onClick={() => setForm({...form, meetingLink: 'https://meet.google.com/' + Math.random().toString(36).substring(2, 5) + '-' + Math.random().toString(36).substring(2, 9) + '-' + Math.random().toString(36).substring(2, 5)})}
+                  className="text-[8px] font-black uppercase text-blue-500 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded-lg transition-colors"
+                >
+                  Generate Link
+                </button>
+              </div>
+              <input 
+                type="url" 
+                value={form.meetingLink} 
+                onChange={e => setForm({...form, meetingLink: e.target.value})} 
+                placeholder="https://meet.google.com/..." 
+                className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-xs font-bold text-slate-700 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all bg-white" 
+              />
+            </motion.div>
+          )}
+          <div>
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Doctor Notes / Prescription</label>
+            <textarea value={form.doctorNotes} onChange={e => setForm({...form, doctorNotes: e.target.value})} placeholder="Enter diagnosis and prescription details..." rows={4} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 outline-none focus:border-blue-400 transition-all bg-white resize-none" />
+          </div>
+          <div>
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Mark Status</label>
+            <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 outline-none focus:border-blue-400 transition-all bg-white">
+               <option value="Completed">Completed</option>
+               <option value="In Progress">In Progress</option>
+               <option value="Scheduled">Scheduled</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100">
+          <button onClick={onClose} className="px-5 py-2 rounded-xl bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest hover:bg-slate-200">Cancel</button>
+          <button onClick={handleSave} disabled={submitting} className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${submitting ? 'bg-slate-100 text-slate-300' : 'bg-blue-500 text-white shadow-lg'}`}>
+            {submitting ? 'Saving...' : 'Save Notes'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+function ActionMenu({ appointment, onView, onMarkComplete, onReschedule, onCancel, onUpdateConsultation }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -225,6 +302,9 @@ function ActionMenu({ appointment, onView, onMarkComplete, onReschedule, onCance
                 <CheckCircle2 size={12} /> Mark Completed
               </button>
             )}
+            <button onClick={() => { setOpen(false); onUpdateConsultation(appointment) }} className="w-full flex items-center gap-2 px-4 py-2.5 text-[10px] font-black uppercase text-blue-600 hover:bg-blue-50 border-b">
+              <FileText size={12} /> Update Consultation
+            </button>
             <button onClick={() => { setOpen(false); onReschedule(appointment) }} className="w-full flex items-center gap-2 px-4 py-2.5 text-[10px] font-black uppercase text-amber-600 hover:bg-amber-50 border-b">
               <CalendarClock size={12} /> Reschedule
             </button>
@@ -252,6 +332,7 @@ function DoctorAppointments() {
   const [viewAppt, setViewAppt] = useState(null)
   const [reschedule, setReschedule] = useState(null)
   const [cancelAppt, setCancelAppt] = useState(null)
+  const [consultationAppt, setConsultationAppt] = useState(null)
 
   const fetchAppointments = async () => {
     if (!user?.id) return
@@ -300,6 +381,17 @@ function DoctorAppointments() {
      } catch (err) {
         toast.error('Cancellation failed')
      }
+  }
+
+  const handleUpdateConsultation = async (form) => {
+    try {
+      await updateAppointment(consultationAppt._id, form)
+      setAppointments(prev => prev.map(a => a._id === consultationAppt._id ? { ...a, ...form } : a))
+      setConsultationAppt(null)
+      toast.success('Consultation mode and notes updated successfully')
+    } catch (err) {
+      toast.error('Failed to update consultation')
+    }
   }
 
   const filtered = useMemo(() => {
@@ -390,6 +482,14 @@ function DoctorAppointments() {
                     <td className="px-6 py-4 text-xs font-bold text-slate-600">{a.time}</td>
                     <td className="px-6 py-4">
                       <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-wider border border-blue-100">{a.type || 'Visit'}</span>
+                      <span className={`ml-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border ${a.consultationMode === 'Online' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                        {a.consultationMode === 'Online' ? 'Online' : 'Offline'}
+                      </span>
+                      {a.consultationMode === 'Online' && a.meetingLink && (
+                        <a href={a.meetingLink} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center justify-center h-6 w-6 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition-all">
+                          <Video size={10} />
+                        </a>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${s.color}`}>
@@ -397,7 +497,7 @@ function DoctorAppointments() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <ActionMenu appointment={a} onView={setViewAppt} onMarkComplete={handleMarkComplete} onReschedule={setReschedule} onCancel={setCancelAppt} />
+                      <ActionMenu appointment={a} onView={setViewAppt} onMarkComplete={handleMarkComplete} onReschedule={setReschedule} onCancel={setCancelAppt} onUpdateConsultation={setConsultationAppt} />
                     </td>
                   </tr>
                 )
@@ -410,6 +510,7 @@ function DoctorAppointments() {
       {viewAppt && <ViewModal appointment={viewAppt} onClose={() => setViewAppt(null)} />}
       {cancelAppt && <CancelModal appointment={cancelAppt} onClose={() => setCancelAppt(null)} onConfirm={handleCancel} />}
       {reschedule && <RescheduleModal appointment={reschedule} onClose={() => setReschedule(null)} onConfirm={handleReschedule} />}
+      {consultationAppt && <ConsultationModal appointment={consultationAppt} onClose={() => setConsultationAppt(null)} onSave={handleUpdateConsultation} />}
     </div>
   )
 }
