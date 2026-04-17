@@ -21,7 +21,8 @@ import {
   CalendarClock,
   Trash2,
   CalendarRange,
-  AlertTriangle
+  AlertTriangle,
+  Video
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import ModernTable from './ModernTable'
@@ -57,7 +58,8 @@ function MyAppointments() {
     date: '',
     time: '',
     reason: '',
-    type: 'In-Clinic'
+    type: 'In-Clinic',
+    consultationMode: 'Offline'
   })
 
   useEffect(() => {
@@ -167,7 +169,10 @@ function MyAppointments() {
           time: apt.time || 'N/A',
           status: apt.status ? (apt.status.charAt(0).toUpperCase() + apt.status.slice(1)) : 'Pending',
           type: apt.type || 'In-Clinic',
-          location: apt.location || 'Hospital Clinic'
+          location: apt.location || 'Hospital Clinic',
+          consultationMode: apt.consultationMode || 'Offline',
+          meetingLink: apt.meetingLink || '',
+          doctorNotes: apt.doctorNotes || ''
         }))
         setAppointments(formatted)
 
@@ -217,7 +222,8 @@ function MyAppointments() {
         reason: bookingForm.reason || 'General Consultation',
         status: 'Pending',
         patientId: patientData._id,
-        doctorId: selectedDoctor?._id
+        doctorId: selectedDoctor?._id,
+        consultationMode: bookingForm.consultationMode
       }
       await createAppointment(payload)
       toast.success('Appointment scheduled successfully!')
@@ -233,7 +239,10 @@ function MyAppointments() {
           time: apt.time || 'N/A',
           status: apt.status ? (apt.status.charAt(0).toUpperCase() + apt.status.slice(1)) : 'Pending',
           type: apt.type || 'In-Clinic',
-          location: apt.location || 'Hospital Clinic'
+          location: apt.location || 'Hospital Clinic',
+          consultationMode: apt.consultationMode || 'Offline',
+          meetingLink: apt.meetingLink || '',
+          doctorNotes: apt.doctorNotes || ''
         }))
         setAppointments(formatted)
     } catch (err) {
@@ -269,7 +278,10 @@ function MyAppointments() {
           time: apt.time || 'N/A',
           status: apt.status ? (apt.status.charAt(0).toUpperCase() + apt.status.slice(1)) : 'Pending',
           type: apt.type || 'In-Clinic',
-          location: apt.location || 'Hospital Clinic'
+          location: apt.location || 'Hospital Clinic',
+          consultationMode: apt.consultationMode || 'Offline',
+          meetingLink: apt.meetingLink || '',
+          doctorNotes: apt.doctorNotes || ''
       }))
       setAppointments(formatted)
     } catch (err) {
@@ -287,7 +299,14 @@ function MyAppointments() {
            <p><span className="text-slate-400">DOCTOR:</span> {apt.doctor}</p>
            <p><span className="text-slate-400">UNIT:</span> {apt.dept}</p>
            <p><span className="text-slate-400">SCHEDULE:</span> {new Date(apt.date).toDateString()} @ {apt.time}</p>
+           <p><span className="text-slate-400">MODE:</span> {apt.consultationMode}</p>
            <p><span className="text-slate-400">LOC:</span> {apt.location || 'Clinical Wing A'}</p>
+           {apt.doctorNotes && (
+             <div className="mt-2 p-2 bg-slate-50 border border-slate-100 rounded text-[9px]">
+               <p className="text-slate-400 uppercase tracking-widest mb-1">Doctor Notes:</p>
+               <p className="whitespace-pre-wrap leading-relaxed">{apt.doctorNotes}</p>
+             </div>
+           )}
         </div>
       </div>,
       { icon: <Activity size={18} className="text-blue-500" /> }
@@ -332,6 +351,11 @@ function MyAppointments() {
           <span className="inline-flex px-3 py-1.5 rounded-lg text-[9px] font-black bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-widest">
             {apt.type}
           </span>
+          {apt.consultationMode === 'Online' && (
+            <span className="ml-2 inline-flex px-3 py-1.5 rounded-lg text-[9px] font-black bg-blue-50 text-blue-500 border border-blue-200 uppercase tracking-widest">
+              Online
+            </span>
+          )}
         </td>
         <td className="px-6 py-4 text-center">
           <div className="flex flex-col items-center">
@@ -364,6 +388,12 @@ function MyAppointments() {
                   <motion.div initial={{ opacity: 0, scale: 0.95, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95, x: 10 }} className="absolute right-full top-0 mr-3 w-48 bg-white rounded-2xl border border-slate-100 shadow-2xl z-[1000] py-2 origin-right text-left">
                     <button onClick={() => handleViewDetails(apt)} className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-emerald-500 transition-all flex items-center gap-3"><Info size={14} strokeWidth={3} /> View Details</button>
                     
+                    {apt.consultationMode === 'Online' && apt.meetingLink && (
+                       <button onClick={() => window.open(apt.meetingLink, '_blank')} className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50 transition-all flex items-center gap-3 border-t border-slate-50">
+                         <Video size={14} strokeWidth={3} /> Join Meeting
+                       </button>
+                    )}
+
                     {(apt.status === 'Confirmed' || apt.status === 'Pending' || apt.status === 'Rescheduled') && (
                       <>
                         <button 
@@ -511,6 +541,22 @@ function MyAppointments() {
                         onChange={e => setBookingForm({ ...bookingForm, date: e.target.value, time: '' })} 
                         className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200/60 rounded-xl text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-emerald-400 transition-all" 
                       />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left block">Consultation Mode</label>
+                    <div className="relative">
+                      <select 
+                        required 
+                        value={bookingForm.consultationMode} 
+                        onChange={e => setBookingForm({ ...bookingForm, consultationMode: e.target.value })} 
+                        className="w-full pl-5 pr-10 py-4 bg-slate-50 border border-slate-200/60 rounded-xl text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-emerald-400 transition-all cursor-pointer appearance-none" 
+                      >
+                        <option value="Offline">Offline (In-Clinic)</option>
+                        <option value="Online">Online (Virtual Meeting)</option>
+                      </select>
+                      <Video className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                     </div>
                   </div>
 
