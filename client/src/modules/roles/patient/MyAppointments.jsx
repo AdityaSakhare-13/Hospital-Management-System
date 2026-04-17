@@ -22,7 +22,7 @@ import {
   Trash2,
   CalendarRange,
   AlertTriangle,
-  Video
+  ChevronDown
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import ModernTable from './ModernTable'
@@ -77,7 +77,7 @@ function MyAppointments() {
 
   const filteredAppointments = appointments.filter(apt => {
     const matchesTab = activeTab === 'upcoming'
-      ? ['Confirmed', 'Pending', 'Rescheduled'].includes(apt.status)
+      ? ['Confirmed', 'Pending', 'Rescheduled', 'Scheduled', 'In Progress'].includes(apt.status)
       : ['Completed', 'Cancelled', 'No-show'].includes(apt.status)
     const matchesSearch = apt.doctor.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesDept = selectedDept === 'All' || apt.dept === selectedDept
@@ -87,7 +87,7 @@ function MyAppointments() {
 
 
   const selectedDoctor = doctorList.find(d => d._id === bookingForm.doctorId)
-  
+
   const availableSlots = useMemo(() => {
     const activeDoctor = selectedDoctor || (rescheduleData ? doctorList.find(d => d._id === rescheduleData.doctorId) : null);
     const activeDate = bookingForm.date || rescheduleData?.date;
@@ -121,33 +121,33 @@ function MyAppointments() {
   const availabilityError = useMemo(() => {
     const activeDoctor = selectedDoctor;
     if (!activeDoctor || !bookingForm.date || !bookingForm.time) return null;
-    
+
     if (!Array.isArray(activeDoctor.availability) || activeDoctor.availability.length === 0) return null;
 
     const date = new Date(bookingForm.date);
     const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const dayName = DAYS[date.getDay()];
-    
+
     const slot = activeDoctor.availability.find(a => a.day === dayName);
     if (!slot) return `Doctor is not available on ${dayName}`;
-    
+
     const [h, m] = bookingForm.time.split(':').map(Number);
     const currentTime = h * 60 + m;
-    
+
     const [sh, sm] = slot.startTime.split(':').map(Number);
     const startTime = sh * 60 + sm;
-    
+
     const [eh, em] = slot.endTime.split(':').map(Number);
     const endTime = eh * 60 + em;
-    
+
     if (currentTime < startTime || currentTime > endTime) {
       return `Available only between ${slot.startTime} and ${slot.endTime} on ${dayName}`;
     }
-    
+
     if (bookedTimes.includes(bookingForm.time)) {
       return `This slot is already reserved.`;
     }
-    
+
     return null;
   }, [selectedDoctor, bookingForm.date, bookingForm.time, bookedTimes])
 
@@ -232,19 +232,19 @@ function MyAppointments() {
       const aRes = await getPatientAppointments(patientData._id)
       const apts = aRes.data.appointments || aRes.data || []
       const formatted = apts.map(apt => ({
-          id: apt._id,
-          doctor: apt.doctor || 'N/A',
-          dept: apt.dept || 'General',
-          date: apt.date ? apt.date.split('T')[0] : 'N/A',
-          time: apt.time || 'N/A',
-          status: apt.status ? (apt.status.charAt(0).toUpperCase() + apt.status.slice(1)) : 'Pending',
-          type: apt.type || 'In-Clinic',
-          location: apt.location || 'Hospital Clinic',
-          consultationMode: apt.consultationMode || 'Offline',
-          meetingLink: apt.meetingLink || '',
-          doctorNotes: apt.doctorNotes || ''
-        }))
-        setAppointments(formatted)
+        id: apt._id,
+        doctor: apt.doctor || 'N/A',
+        dept: apt.dept || 'General',
+        date: apt.date ? apt.date.split('T')[0] : 'N/A',
+        time: apt.time || 'N/A',
+        status: apt.status ? (apt.status.charAt(0).toUpperCase() + apt.status.slice(1)) : 'Pending',
+        type: apt.type || 'In-Clinic',
+        location: apt.location || 'Hospital Clinic',
+        consultationMode: apt.consultationMode || 'Offline',
+        meetingLink: apt.meetingLink || '',
+        doctorNotes: apt.doctorNotes || ''
+      }))
+      setAppointments(formatted)
     } catch (err) {
       toast.error(err.message || 'Failed to book appointment')
     } finally {
@@ -271,17 +271,17 @@ function MyAppointments() {
       const aRes = await getPatientAppointments(patientData._id)
       const apts = aRes.data.appointments || aRes.data || []
       const formatted = apts.map(apt => ({
-          id: apt._id,
-          doctor: apt.doctor || 'N/A',
-          dept: apt.dept || 'General',
-          date: apt.date ? apt.date.split('T')[0] : 'N/A',
-          time: apt.time || 'N/A',
-          status: apt.status ? (apt.status.charAt(0).toUpperCase() + apt.status.slice(1)) : 'Pending',
-          type: apt.type || 'In-Clinic',
-          location: apt.location || 'Hospital Clinic',
-          consultationMode: apt.consultationMode || 'Offline',
-          meetingLink: apt.meetingLink || '',
-          doctorNotes: apt.doctorNotes || ''
+        id: apt._id,
+        doctor: apt.doctor || 'N/A',
+        dept: apt.dept || 'General',
+        date: apt.date ? apt.date.split('T')[0] : 'N/A',
+        time: apt.time || 'N/A',
+        status: apt.status ? (apt.status.charAt(0).toUpperCase() + apt.status.slice(1)) : 'Pending',
+        type: apt.type || 'In-Clinic',
+        location: apt.location || 'Hospital Clinic',
+        consultationMode: apt.consultationMode || 'Offline',
+        meetingLink: apt.meetingLink || '',
+        doctorNotes: apt.doctorNotes || ''
       }))
       setAppointments(formatted)
     } catch (err) {
@@ -296,17 +296,20 @@ function MyAppointments() {
       <div>
         <h4 className="font-black text-[11px] uppercase tracking-widest mb-2 border-b border-blue-100 pb-1 text-slate-900">Appointment Ledger</h4>
         <div className="space-y-1 text-[10px] font-bold text-slate-600">
-           <p><span className="text-slate-400">DOCTOR:</span> {apt.doctor}</p>
-           <p><span className="text-slate-400">UNIT:</span> {apt.dept}</p>
-           <p><span className="text-slate-400">SCHEDULE:</span> {new Date(apt.date).toDateString()} @ {apt.time}</p>
-           <p><span className="text-slate-400">MODE:</span> {apt.consultationMode}</p>
-           <p><span className="text-slate-400">LOC:</span> {apt.location || 'Clinical Wing A'}</p>
-           {apt.doctorNotes && (
-             <div className="mt-2 p-2 bg-slate-50 border border-slate-100 rounded text-[9px]">
-               <p className="text-slate-400 uppercase tracking-widest mb-1">Doctor Notes:</p>
-               <p className="whitespace-pre-wrap leading-relaxed">{apt.doctorNotes}</p>
-             </div>
-           )}
+          <p><span className="text-slate-400">DOCTOR:</span> {apt.doctor}</p>
+          <p><span className="text-slate-400">UNIT:</span> {apt.dept}</p>
+          <p><span className="text-slate-400">SCHEDULE:</span> {new Date(apt.date).toDateString()} @ {apt.time}</p>
+          <p><span className="text-slate-400">MODE:</span> {apt.consultationMode}</p>
+          <p><span className="text-slate-400">LOC:</span> {apt.location || 'Clinical Wing A'}</p>
+          {apt.consultationMode === 'Online' && apt.meetingLink && (
+            <p className="mt-1"><span className="text-slate-400">LINK:</span> <a href={apt.meetingLink} target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-700 underline break-all">{apt.meetingLink}</a></p>
+          )}
+          {apt.doctorNotes && (
+            <div className="mt-2 p-2 bg-slate-50 border border-slate-100 rounded text-[9px]">
+              <p className="text-slate-400 uppercase tracking-widest mb-1">Doctor Notes:</p>
+              <p className="whitespace-pre-wrap leading-relaxed">{apt.doctorNotes}</p>
+            </div>
+          )}
         </div>
       </div>,
       { icon: <Activity size={18} className="text-blue-500" /> }
@@ -331,7 +334,7 @@ function MyAppointments() {
     )
   }
 
-  const tableHeaders = ['Doctor / Specialist', 'Type', 'Unit / Location', 'Date & Time', 'Status', 'Actions']
+  const tableHeaders = ['Doctor / Specialist', 'Type', 'Mode', 'Unit / Location', 'Date & Time', 'Status', 'Actions']
 
   const renderAptRow = (apt) => {
     const docInitials = apt.doctor.split(' ').filter(n => n.length > 0).map(n => n[0]).join('')
@@ -351,11 +354,11 @@ function MyAppointments() {
           <span className="inline-flex px-3 py-1.5 rounded-lg text-[9px] font-black bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-widest">
             {apt.type}
           </span>
-          {apt.consultationMode === 'Online' && (
-            <span className="ml-2 inline-flex px-3 py-1.5 rounded-lg text-[9px] font-black bg-blue-50 text-blue-500 border border-blue-200 uppercase tracking-widest">
-              Online
-            </span>
-          )}
+        </td>
+        <td className="px-6 py-4 text-center">
+          <span className={`inline-flex px-3 py-1.5 rounded-lg text-[9px] font-black border uppercase tracking-widest ${apt.consultationMode === 'Online' ? 'bg-blue-50 text-blue-500 border-blue-200' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+            {apt.consultationMode === 'Online' ? 'Online' : 'Offline'}
+          </span>
         </td>
         <td className="px-6 py-4 text-center">
           <div className="flex flex-col items-center">
@@ -376,48 +379,58 @@ function MyAppointments() {
         </td>
         <td className="px-6 py-4 text-center">
           <div className="flex justify-center items-center gap-3">
-            <div className="relative inline-block">
+            {(apt.status === 'Completed' || apt.status === 'Cancelled') ? (
               <button 
-                onClick={() => setActiveMenu(activeMenu === apt.id ? null : apt.id)} 
-                className="p-2 rounded-xl transition-all text-slate-300 hover:text-slate-900 hover:bg-slate-100 border border-slate-100"
+                onClick={() => handleViewDetails(apt)} 
+                className="h-8 w-8 rounded-lg bg-slate-50 text-slate-400 border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-500 hover:border-emerald-200 transition-all shadow-sm"
+                title="View Details"
               >
-                <MoreVertical size={18} strokeWidth={3} />
+                <Info size={14} strokeWidth={3} />
               </button>
-              <AnimatePresence>
-                {activeMenu === apt.id && (
-                  <motion.div initial={{ opacity: 0, scale: 0.95, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95, x: 10 }} className="absolute right-full top-0 mr-3 w-48 bg-white rounded-2xl border border-slate-100 shadow-2xl z-[1000] py-2 origin-right text-left">
-                    <button onClick={() => handleViewDetails(apt)} className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-emerald-500 transition-all flex items-center gap-3"><Info size={14} strokeWidth={3} /> View Details</button>
-                    
-                    {apt.consultationMode === 'Online' && apt.meetingLink && (
-                       <button onClick={() => window.open(apt.meetingLink, '_blank')} className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50 transition-all flex items-center gap-3 border-t border-slate-50">
-                         <Video size={14} strokeWidth={3} /> Join Meeting
-                       </button>
-                    )}
+            ) : (
+              <div className="relative inline-block">
+                <button 
+                  onClick={() => setActiveMenu(activeMenu === apt.id ? null : apt.id)} 
+                  className="p-2 rounded-xl transition-all text-slate-300 hover:text-slate-900 hover:bg-slate-100 border border-slate-100"
+                >
+                  <MoreVertical size={18} strokeWidth={3} />
+                </button>
+                <AnimatePresence>
+                  {activeMenu === apt.id && (
+                    <motion.div initial={{ opacity: 0, scale: 0.95, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95, x: 10 }} className="absolute right-full top-0 mr-3 w-48 bg-white rounded-2xl border border-slate-100 shadow-2xl z-[1000] py-2 origin-right text-left">
+                      <button onClick={() => handleViewDetails(apt)} className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-emerald-500 transition-all flex items-center gap-3"><Info size={14} strokeWidth={3} /> View Details</button>
+                      
+                      {apt.consultationMode === 'Online' && apt.meetingLink && (
+                         <button onClick={() => window.open(apt.meetingLink, '_blank')} className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50 transition-all flex items-center gap-3 border-t border-slate-50">
+                           <Video size={14} strokeWidth={3} /> Join Meeting
+                         </button>
+                      )}
 
-                    {(apt.status === 'Confirmed' || apt.status === 'Pending' || apt.status === 'Rescheduled') && (
-                      <>
-                        <button 
-                          onClick={() => {
-                            const doc = doctorList.find(d => d.name === apt.doctor || d.specialization === apt.dept);
-                            setRescheduleData({ ...apt, doctorId: doc?._id });
-                            setActiveMenu(null);
-                          }} 
-                          className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-amber-600 hover:bg-amber-50 transition-all flex items-center gap-3 border-t border-slate-50"
-                        >
-                          <CalendarClock size={14} strokeWidth={3} /> Change Time
-                        </button>
-                        <button 
-                          onClick={() => handleCancelVisit(apt.id)} 
-                          className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 transition-all flex items-center gap-3 border-t border-slate-50"
-                        >
-                          <Trash2 size={14} strokeWidth={3} /> Cancel Visit
-                        </button>
-                      </>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                      {(apt.status === 'Confirmed' || apt.status === 'Pending' || apt.status === 'Rescheduled') && (
+                        <>
+                          <button 
+                            onClick={() => {
+                              const doc = doctorList.find(d => d.name === apt.doctor || d.specialization === apt.dept);
+                              setRescheduleData({ ...apt, doctorId: doc?._id });
+                              setActiveMenu(null);
+                            }} 
+                            className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-amber-600 hover:bg-amber-50 transition-all flex items-center gap-3 border-t border-slate-50"
+                          >
+                            <CalendarClock size={14} strokeWidth={3} /> Change Time
+                          </button>
+                          <button 
+                            onClick={() => handleCancelVisit(apt.id)} 
+                            className="w-full px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 transition-all flex items-center gap-3 border-t border-slate-50"
+                          >
+                            <Trash2 size={14} strokeWidth={3} /> Cancel Visit
+                          </button>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </td>
       </tr>
@@ -434,8 +447,8 @@ function MyAppointments() {
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1 pl-5">Oversee and coordinate your clinical consultations</p>
         </div>
         <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setView(view === 'list' ? 'book' : 'list')} 
+          <button
+            onClick={() => setView(view === 'list' ? 'book' : 'list')}
             className={`flex items-center gap-2 px-5 py-3 ${view === 'list' ? 'bg-slate-900 hover:bg-emerald-500' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95`}
           >
             {view === 'list' ? <Plus size={16} strokeWidth={3} /> : <ArrowLeft size={16} strokeWidth={3} />}
@@ -515,7 +528,7 @@ function MyAppointments() {
 
               <form onSubmit={handleBooking} className="p-8 sm:p-10 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                   <div className="space-y-2">
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left block">Select Specialist</label>
                     <select required value={bookingForm.doctorId} onChange={e => setBookingForm({ ...bookingForm, doctorId: e.target.value, time: '' })} className="w-full px-5 py-4 bg-slate-50 border border-slate-200/60 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-emerald-400 transition-all cursor-pointer">
                       <option value="" disabled>Search Unit Specialist...</option>
@@ -533,13 +546,13 @@ function MyAppointments() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left block">Appointment Date</label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                      <input 
-                        required 
-                        type="date" 
-                        value={bookingForm.date} 
-                        min={new Date().toISOString().split('T')[0]} 
-                        onChange={e => setBookingForm({ ...bookingForm, date: e.target.value, time: '' })} 
-                        className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200/60 rounded-xl text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-emerald-400 transition-all" 
+                      <input
+                        required
+                        type="date"
+                        value={bookingForm.date}
+                        min={new Date().toISOString().split('T')[0]}
+                        onChange={e => setBookingForm({ ...bookingForm, date: e.target.value, time: '' })}
+                        className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200/60 rounded-xl text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-emerald-400 transition-all"
                       />
                     </div>
                   </div>
@@ -547,16 +560,16 @@ function MyAppointments() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left block">Consultation Mode</label>
                     <div className="relative">
-                      <select 
-                        required 
-                        value={bookingForm.consultationMode} 
-                        onChange={e => setBookingForm({ ...bookingForm, consultationMode: e.target.value })} 
-                        className="w-full pl-5 pr-10 py-4 bg-slate-50 border border-slate-200/60 rounded-xl text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-emerald-400 transition-all cursor-pointer appearance-none" 
+                      <select
+                        required
+                        value={bookingForm.consultationMode}
+                        onChange={e => setBookingForm({ ...bookingForm, consultationMode: e.target.value })}
+                        className="w-full pl-5 pr-10 py-4 bg-slate-50 border border-slate-200/60 rounded-xl text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-emerald-400 transition-all cursor-pointer appearance-none"
                       >
                         <option value="Offline">Offline (In-Clinic)</option>
                         <option value="Online">Online (Virtual Meeting)</option>
                       </select>
-                      <Video className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                     </div>
                   </div>
 
@@ -579,13 +592,12 @@ function MyAppointments() {
                             type="button"
                             disabled={slot.isBooked}
                             onClick={() => setBookingForm({ ...bookingForm, time: slot.time })}
-                            className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-2 ${
-                              bookingForm.time === slot.time
+                            className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-2 ${bookingForm.time === slot.time
                                 ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-200 scale-105'
                                 : slot.isBooked
                                   ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
                                   : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 active:scale-95'
-                            }`}
+                              }`}
                           >
                             {slot.time}
                             {bookingForm.time === slot.time && <CheckCircle2 size={10} />}
@@ -593,7 +605,7 @@ function MyAppointments() {
                         ))}
                       </div>
                     )}
-                    
+
                     {availabilityError && (
                       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                         className="p-4 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-3">
@@ -631,16 +643,16 @@ function MyAppointments() {
       <AnimatePresence>
         {rescheduleData && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }} 
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setRescheduleData(null)}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }} 
-              animate={{ opacity: 1, scale: 1, y: 0 }} 
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100"
             >
@@ -660,13 +672,13 @@ function MyAppointments() {
                 <div className="space-y-4 text-left">
                   <div className="space-y-2 text-left">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Pick a New Date</label>
-                    <input 
-                      required 
-                      type="date" 
+                    <input
+                      required
+                      type="date"
                       min={new Date().toISOString().split('T')[0]}
-                      value={rescheduleData.date} 
-                      onChange={e => setRescheduleData({...rescheduleData, date: e.target.value})}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-amber-400 transition-all" 
+                      value={rescheduleData.date}
+                      onChange={e => setRescheduleData({ ...rescheduleData, date: e.target.value })}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-amber-400 transition-all"
                     />
                   </div>
                   <div className="space-y-2 text-left">
@@ -678,13 +690,12 @@ function MyAppointments() {
                           type="button"
                           disabled={slot.isBooked}
                           onClick={() => setRescheduleData({ ...rescheduleData, time: slot.time })}
-                          className={`px-3 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-2 ${
-                            rescheduleData.time === slot.time
+                          className={`px-3 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-2 ${rescheduleData.time === slot.time
                               ? 'bg-amber-500 text-white border-amber-400 shadow-lg shadow-amber-200'
                               : slot.isBooked
                                 ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
                                 : 'bg-white text-slate-600 border-slate-200 hover:border-amber-300 hover:bg-amber-50 active:scale-95'
-                          }`}
+                            }`}
                         >
                           {slot.time}
                         </button>
@@ -697,15 +708,15 @@ function MyAppointments() {
                 </div>
 
                 <div className="pt-4 flex gap-3">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setRescheduleData(null)}
                     className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-400 text-[11px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all border-none outline-none"
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     disabled={submitting}
                     className="flex-[2] py-4 bg-slate-950 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-amber-500 transition-all shadow-xl active:scale-95 disabled:bg-slate-300 border-none outline-none"
                   >

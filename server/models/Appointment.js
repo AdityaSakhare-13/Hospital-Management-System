@@ -64,6 +64,8 @@ const appointmentSchema = new mongoose.Schema(
         "Confirmed",
         "Cancelled",
         "Completed",
+        "Waiting",
+        "Rescheduled",
       ],
       default: "Pending",
       index: true, // 🔥 ADD: filter fast
