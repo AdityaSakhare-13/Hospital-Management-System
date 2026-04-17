@@ -190,13 +190,17 @@ function CancelModal({ appointment, onClose, onConfirm }) {
 
 function ConsultationModal({ appointment, onClose, onSave }) {
   const [form, setForm] = useState({
+    consultationMode: appointment.consultationMode || 'Offline',
     meetingLink: appointment.meetingLink || '',
-    doctorNotes: appointment.doctorNotes || '',
-    status: appointment.status === 'Completed' ? 'Completed' : 'Completed'
+    doctorNotes: appointment.doctorNotes || ''
   })
   const [submitting, setSubmitting] = useState(false)
   
   const handleSave = async () => {
+    if (form.consultationMode === 'Online' && !form.meetingLink.trim()) {
+      toast.error('Please generate or provide a Meeting Link for online consultation');
+      return;
+    }
     setSubmitting(true)
     await onSave(form)
     setSubmitting(false)
@@ -213,14 +217,17 @@ function ConsultationModal({ appointment, onClose, onSave }) {
           <div className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
             <div>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Consultation Mode</p>
-              <p className="text-xs font-black text-slate-700 uppercase tracking-tight">{appointment.consultationMode || 'Offline'}</p>
+              <select value={form.consultationMode} onChange={e => setForm({...form, consultationMode: e.target.value})} className="text-xs font-black text-slate-700 uppercase tracking-tight bg-transparent outline-none cursor-pointer">
+                <option value="Offline">OFFLINE</option>
+                <option value="Online">ONLINE</option>
+              </select>
             </div>
-            <div className={`h-8 w-8 rounded-xl flex items-center justify-center ${appointment.consultationMode === 'Online' ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
-              {appointment.consultationMode === 'Online' ? <Video size={14} /> : <User size={14} />}
+            <div className={`h-8 w-8 rounded-xl flex items-center justify-center ${form.consultationMode === 'Online' ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
+              {form.consultationMode === 'Online' ? <Video size={14} /> : <User size={14} />}
             </div>
           </div>
 
-          {appointment.consultationMode === 'Online' && (
+          {form.consultationMode === 'Online' && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
               <div className="flex justify-between items-end mb-1.5">
                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Meeting Link (Google Meet)</label>
@@ -245,14 +252,7 @@ function ConsultationModal({ appointment, onClose, onSave }) {
             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Doctor Notes / Prescription</label>
             <textarea value={form.doctorNotes} onChange={e => setForm({...form, doctorNotes: e.target.value})} placeholder="Enter diagnosis and prescription details..." rows={4} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 outline-none focus:border-blue-400 transition-all bg-white resize-none" />
           </div>
-          <div>
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Mark Status</label>
-            <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 outline-none focus:border-blue-400 transition-all bg-white">
-               <option value="Completed">Completed</option>
-               <option value="In Progress">In Progress</option>
-               <option value="Scheduled">Scheduled</option>
-            </select>
-          </div>
+
         </div>
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100">
           <button onClick={onClose} className="px-5 py-2 rounded-xl bg-slate-100 text-slate-500 text-xs font-black uppercase tracking-widest hover:bg-slate-200">Cancel</button>
@@ -297,7 +297,7 @@ function ActionMenu({ appointment, onView, onMarkComplete, onReschedule, onCance
               <Eye size={12} /> View Details
             </button>
             {/* Only allow marking completed if appointment date is today or past */}
-            {new Date(appointment.date).setHours(0, 0, 0, 0) <= new Date().setHours(0, 0, 0, 0) && (
+            {(status === 'Scheduled' || status === 'Pending' || status === 'In Progress') && (
               <button onClick={() => { setOpen(false); onMarkComplete(appointment._id) }} className="w-full flex items-center gap-2 px-4 py-2.5 text-[10px] font-black uppercase text-emerald-600 hover:bg-emerald-50 border-b">
                 <CheckCircle2 size={12} /> Mark Completed
               </button>
@@ -455,14 +455,14 @@ function DoctorAppointments() {
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50/50">
-                {['Patient', 'Date', 'Time', 'Type', 'Status', 'Action'].map(h => (
+                {['Patient', 'Date', 'Time', 'Type', 'Mode', 'Status', 'Action'].map(h => (
                   <th key={h} className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-20 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">No clinical records found</td></tr>
+                <tr><td colSpan={7} className="px-6 py-20 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">No clinical records found</td></tr>
               ) : filtered.map(a => {
                 const s = STATUS_CONFIG[a.status] || STATUS_CONFIG.Scheduled
                 return (
@@ -482,7 +482,9 @@ function DoctorAppointments() {
                     <td className="px-6 py-4 text-xs font-bold text-slate-600">{a.time}</td>
                     <td className="px-6 py-4">
                       <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-wider border border-blue-100">{a.type || 'Visit'}</span>
-                      <span className={`ml-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border ${a.consultationMode === 'Online' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border ${a.consultationMode === 'Online' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                         {a.consultationMode === 'Online' ? 'Online' : 'Offline'}
                       </span>
                       {a.consultationMode === 'Online' && a.meetingLink && (

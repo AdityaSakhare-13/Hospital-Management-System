@@ -129,7 +129,7 @@ function AdminDashboard() {
             ) : !chartCache[chartTab]?.length ? (
               <div className="h-full flex items-center justify-center text-xs font-bold text-slate-300">No appointment data</div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%" debounce={100}>
+              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                 <BarChart data={chartCache[chartTab]} barSize={28}>
                   <XAxis dataKey="label" tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -154,7 +154,7 @@ function AdminDashboard() {
                 {loading ? 'Loading...' : 'No revenue data'}
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%" debounce={100}>
+              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                 <PieChart>
                   <Pie data={revenueData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={6} dataKey="value">
                     {revenueData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
