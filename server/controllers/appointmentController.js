@@ -10,7 +10,7 @@ const notificationService = require("../services/notificationService");
 // @desc    Create appointment
 // @route   POST /api/appointments
 exports.createAppointment = asyncHandler(async (req, res) => {
-  const { patient, doctor, dept, date, time, reason, status, patientId, doctorId, type, priority } = req.body;
+  const { patient, doctor, dept, date, time, reason, status, patientId, doctorId, type, priority, consultationMode, meetingLink, doctorNotes } = req.body;
 
   const appointment = await Appointment.create({
     patient,
@@ -24,6 +24,9 @@ exports.createAppointment = asyncHandler(async (req, res) => {
     doctorId: doctorId || null,
     type: type || "Consultation",
     priority: priority || "Normal",
+    consultationMode: consultationMode || "Offline",
+    meetingLink: meetingLink || "",
+    doctorNotes: doctorNotes || "",
   });
 
   // --- Audit Log ---
@@ -142,7 +145,7 @@ exports.getAppointmentById = asyncHandler(async (req, res) => {
 // @desc    Update appointment
 // @route   PUT /api/appointments/:id
 exports.updateAppointment = asyncHandler(async (req, res) => {
-  const { patient, doctor, dept, date, time, status, reason, type, priority, patientId, doctorId } = req.body;
+  const { patient, doctor, dept, date, time, status, reason, type, priority, patientId, doctorId, consultationMode, meetingLink, doctorNotes } = req.body;
 
   let appointment = await Appointment.findById(req.params.id);
 
@@ -178,6 +181,11 @@ exports.updateAppointment = asyncHandler(async (req, res) => {
   if (priority) appointment.priority = priority;
   if (patientId) appointment.patientId = patientId;
   if (doctorId) appointment.doctorId = doctorId;
+
+  // New Consultation Fields
+  if (consultationMode) appointment.consultationMode = consultationMode;
+  if (meetingLink !== undefined) appointment.meetingLink = meetingLink;
+  if (doctorNotes !== undefined) appointment.doctorNotes = doctorNotes;
 
   appointment = await appointment.save();
 

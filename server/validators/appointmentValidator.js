@@ -19,14 +19,28 @@ exports.appointmentValidator = [
     .withMessage("Reason for appointment is required")
     .isLength({ min: 2 })
     .withMessage("Reason must be at least 2 characters"),
+  body("consultationMode")
+    .optional()
+    .isIn(["Online", "Offline"])
+    .withMessage("Invalid consultation mode"),
+  body("meetingLink")
+    .optional()
+    .if(body("consultationMode").equals("Online"))
+    .notEmpty()
+    .withMessage("Meeting link is required for Online consultation")
+    .isURL()
+    .withMessage("Valid meeting link is required for Online consultation"),
+  body("doctorNotes")
+    .optional()
+    .trim(),
 ];
 
 exports.appointmentUpdateValidator = [
-  body("appointmentDate")
+  body("date")
     .optional()
     .isISO8601()
     .withMessage("Invalid appointment date format"),
-  body("appointmentTime")
+  body("time")
     .optional()
     .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
     .withMessage("Invalid time format (use HH:MM)"),
@@ -34,14 +48,11 @@ exports.appointmentUpdateValidator = [
     .optional()
     .isIn([
       "Pending",
+      "Scheduled",
+      "In Progress",
       "Confirmed",
       "Cancelled",
       "Completed",
-      "scheduled",
-      "completed",
-      "cancelled",
-      "no-show",
-      "rescheduled",
     ])
     .withMessage("Invalid status"),
   body("reason")
@@ -49,6 +60,20 @@ exports.appointmentUpdateValidator = [
     .trim()
     .isLength({ min: 5 })
     .withMessage("Reason must be at least 5 characters"),
+  body("consultationMode")
+    .optional()
+    .isIn(["Online", "Offline"])
+    .withMessage("Invalid consultation mode"),
+  body("meetingLink")
+    .optional()
+    .if(body("consultationMode").equals("Online"))
+    .notEmpty()
+    .withMessage("Meeting link is required for Online consultation")
+    .isURL()
+    .withMessage("Valid meeting link is required for Online consultation"),
+  body("doctorNotes")
+    .optional()
+    .trim(),
   body("notes")
     .optional()
     .trim(),

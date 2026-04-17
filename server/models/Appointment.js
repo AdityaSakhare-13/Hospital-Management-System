@@ -73,6 +73,22 @@ const appointmentSchema = new mongoose.Schema(
       type: String,
       required: [true, "Reason for appointment is required"],
     },
+
+    consultationMode: {
+      type: String,
+      enum: ["Online", "Offline"],
+      default: "Offline",
+    },
+
+    meetingLink: {
+      type: String,
+      default: "",
+    },
+
+    doctorNotes: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
