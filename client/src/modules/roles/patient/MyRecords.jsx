@@ -229,7 +229,7 @@ function MyRecords() {
    );
 
    return (
-      <div className="space-y-6 pb-10 animate-in fade-in duration-700 w-full px-2 sm:px-4 max-w-[100vw] overflow-x-hidden text-center">
+      <div className="space-y-6 pb-10 animate-in fade-in duration-700 w-full max-w-[100vw] overflow-x-hidden text-center">
          {/* Loading State Overlay */}
          {isLoading && (
             <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">

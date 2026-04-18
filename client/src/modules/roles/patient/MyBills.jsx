@@ -184,7 +184,7 @@ function MyBills() {
    );
 
    return (
-      <div className="space-y-6 pb-10 animate-in fade-in duration-700 w-full px-2 sm:px-4 max-w-[100vw] overflow-x-hidden">
+      <div className="space-y-6 pb-10 animate-in fade-in duration-700 w-full max-w-[100vw] overflow-x-hidden">
          
          {/* 🏙️ Billing Header */}
          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">

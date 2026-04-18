@@ -223,7 +223,7 @@ function PatientProfile() {
   const inputClass = "w-full pl-11 pr-4 py-3 rounded-xl border bg-slate-50 border-slate-100 text-sm font-bold text-slate-600 outline-none cursor-default"
 
   return (
-    <div className="space-y-6 pb-10 animate-in fade-in duration-500 w-full px-2 sm:px-4 max-w-[100vw] overflow-x-hidden">
+    <div className="space-y-6 pb-10 animate-in fade-in duration-500 w-full max-w-[100vw] overflow-x-hidden">
       
       <AnimatePresence>
         {message.text && (

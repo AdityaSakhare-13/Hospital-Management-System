@@ -461,7 +461,7 @@ function MyAppointments() {
   }
 
   return (
-    <div className="space-y-6 pb-10 animate-in fade-in duration-700 w-full px-2 sm:px-4 max-w-[100vw] overflow-x-hidden">
+    <div className="space-y-6 pb-10 animate-in fade-in duration-700 w-full max-w-[100vw] overflow-x-hidden">
 
       {/* 🏙️ Visit Schedule Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
@@ -536,8 +536,8 @@ function MyAppointments() {
             </div>
           </motion.div>
         ) : (
-          <motion.div key="book" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="flex justify-center w-full">
-            <div className="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm overflow-hidden w-full max-w-4xl relative">
+          <motion.div key="book" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="flex justify-start w-full">
+            <div className="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm overflow-hidden w-full max-w-6xl relative">
               <div className="p-8 sm:p-10 border-b border-slate-50 flex items-center justify-between bg-emerald-50/20">
                 <div className="flex items-center gap-5">
                   <div className="h-12 w-12 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-xl shadow-emerald-500/20"><Stethoscope size={24} strokeWidth={3} /></div>

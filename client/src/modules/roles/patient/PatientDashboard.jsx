@@ -142,7 +142,7 @@ function PatientDashboard() {
   }
 
   return (
-    <div className="space-y-8 pb-10 animate-in fade-in duration-700 px-2 sm:px-4 max-w-[100vw] overflow-x-hidden">
+    <div className="space-y-8 pb-10 animate-in fade-in duration-700 max-w-[100vw] overflow-x-hidden">
       
       {/* 🚀 Header & Welcome Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
