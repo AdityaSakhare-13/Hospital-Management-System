@@ -22,7 +22,8 @@ import {
   Trash2,
   CalendarRange,
   AlertTriangle,
-  ChevronDown
+  ChevronDown,
+  Video
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import ModernTable from './ModernTable'
@@ -76,9 +77,8 @@ function MyAppointments() {
   }, [bookingForm.doctorId, bookingForm.date, rescheduleData?.doctorId, rescheduleData?.date])
 
   const filteredAppointments = appointments.filter(apt => {
-    const matchesTab = activeTab === 'upcoming'
-      ? ['Confirmed', 'Pending', 'Rescheduled', 'Scheduled', 'In Progress'].includes(apt.status)
-      : ['Completed', 'Cancelled', 'No-show'].includes(apt.status)
+    const isPastState = ['Completed', 'Cancelled', 'No-show'].includes(apt.status)
+    const matchesTab = activeTab === 'upcoming' ? !isPastState : isPastState
     const matchesSearch = apt.doctor.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesDept = selectedDept === 'All' || apt.dept === selectedDept
     return matchesTab && matchesSearch && matchesDept
@@ -105,13 +105,23 @@ function MyAppointments() {
     let current = sh * 60 + sm
     const end = eh * 60 + em
 
+    const now = new Date()
+    const todayStr = now.toLocaleDateString('en-CA') // YYYY-MM-DD
+
     while (current <= end) {
       const h = Math.floor(current / 60)
       const m = current % 60
       const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      
+      let isPast = false
+      if (activeDate === todayStr) {
+        const nowInMinutes = now.getHours() * 60 + now.getMinutes()
+        if (current < nowInMinutes) isPast = true
+      }
+
       slots.push({
         time: timeStr,
-        isBooked: bookedTimes.includes(timeStr)
+        isBooked: bookedTimes.includes(timeStr) || isPast
       })
       current += 30
     }
@@ -146,6 +156,14 @@ function MyAppointments() {
 
     if (bookedTimes.includes(bookingForm.time)) {
       return `This slot is already reserved.`;
+    }
+
+    const now = new Date();
+    if (bookingForm.date === now.toLocaleDateString('en-CA')) {
+      const [h, m] = bookingForm.time.split(':').map(Number);
+      if ((h * 60 + m) < (now.getHours() * 60 + now.getMinutes())) {
+        return "Cannot book a session for a time that has already passed today.";
+      }
     }
 
     return null;
@@ -204,6 +222,11 @@ function MyAppointments() {
     e.preventDefault()
     if (!bookingForm.doctorId || !bookingForm.date || !bookingForm.time) {
       toast.warning('Please fill in all required fields including a time slot')
+      return
+    }
+    const alreadyBooked = appointments.some(a => a.date === bookingForm.date && a.status !== 'Cancelled')
+    if (alreadyBooked) {
+      toast.error('You already have an appointment scheduled for this day. Only one appointment per day is allowed.')
       return
     }
     if (availabilityError) {
