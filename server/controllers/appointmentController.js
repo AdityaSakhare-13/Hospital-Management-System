@@ -7,10 +7,81 @@ const ApiResponse = require("../utils/ApiResponse");
 const logService = require("../services/logService");
 const notificationService = require("../services/notificationService");
 
+// Helper to parse time string (e.g., "10:00 AM" or "14:30") to minutes from midnight
+const timeToMinutes = (timeStr) => {
+  if (!timeStr) return 0;
+  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (match) {
+    let h = parseInt(match[1]);
+    let m = parseInt(match[2]);
+    const ampm = match[3].toUpperCase();
+    if (ampm === "AM" && h === 12) h = 0;
+    if (ampm === "PM" && h !== 12) h += 12;
+    return h * 60 + m;
+  }
+  const parts = timeStr.split(":").map(Number);
+  return (parts[0] || 0) * 60 + (parts[1] || 0);
+};
+
 // @desc    Create appointment
 // @route   POST /api/appointments
 exports.createAppointment = asyncHandler(async (req, res) => {
   const { patient, doctor, dept, date, time, reason, status, patientId, doctorId, type, priority, consultationMode, meetingLink, doctorNotes } = req.body;
+
+  // 1. Time-based Restriction: Prevent booking in the past
+  const now = new Date();
+  const reqDate = new Date(date);
+  reqDate.setHours(0, 0, 0, 0);
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (reqDate < today) {
+    throw new ApiError(400, "Cannot book appointments for past dates");
+  }
+
+  if (reqDate.getTime() === today.getTime()) {
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const requestedMinutes = timeToMinutes(time);
+    
+    // Allow a small buffer (e.g., 5 mins) if needed, but strict here
+    if (requestedMinutes < currentMinutes) {
+      throw new ApiError(400, "Cannot book appointments for a time that has already passed today");
+    }
+  }
+
+  // 2. One Appointment Per Day Restriction
+  if (patientId || patient) {
+    let startOfDay, endOfDay;
+    
+    if (typeof date === 'string' && date.includes('-')) {
+      const [year, month, day] = date.split('-').map(Number);
+      startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+      endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+    } else {
+      startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+    }
+
+    const query = {
+      date: { $gte: startOfDay, $lte: endOfDay },
+      status: { $ne: "Cancelled" }
+    };
+
+    if (patientId) {
+      query.patientId = patientId;
+    } else {
+      query.patient = patient; // Fallback for manual reception booking
+    }
+
+    const existingAppointment = await Appointment.findOne(query);
+
+    if (existingAppointment) {
+      throw new ApiError(400, `Appointment already exists for ${patient} on this day. Only one appointment per day is allowed.`);
+    }
+  }
 
   const appointment = await Appointment.create({
     patient,
@@ -169,8 +240,11 @@ exports.updateAppointment = asyncHandler(async (req, res) => {
     if (status === "Completed") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      
       const apptDate = new Date(appointment.date);
-      if (apptDate > today) {
+      apptDate.setHours(0, 0, 0, 0); // Normalize appointment date to midnight
+      
+      if (apptDate.getTime() > today.getTime()) {
         throw new ApiError(400, "Cannot mark an upcoming appointment as completed");
       }
     }

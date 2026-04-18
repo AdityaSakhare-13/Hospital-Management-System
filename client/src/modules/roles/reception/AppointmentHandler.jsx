@@ -88,13 +88,23 @@ const AppointmentHandler = () => {
     let current = sh * 60 + sm
     const end = eh * 60 + em
 
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('en-CA');
+
     while (current <= end) {
       const h = Math.floor(current / 60)
       const m = current % 60
       const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      
+      let isPast = false;
+      if (form.date === todayStr) {
+        const nowInMinutes = now.getHours() * 60 + now.getMinutes();
+        if (current < nowInMinutes) isPast = true;
+      }
+
       slots.push({
         time: timeStr,
-        isBooked: bookedTimes.includes(timeStr)
+        isBooked: bookedTimes.includes(timeStr) || isPast
       })
       current += 30
     }
@@ -121,6 +131,15 @@ const AppointmentHandler = () => {
     
     if (currentTime < startTime || currentTime > endTime) return `Available ${slot.startTime} - ${slot.endTime}`;
     if (bookedTimes.includes(form.time)) return `Slot already booked`;
+
+    const now = new Date();
+    if (form.date === now.toLocaleDateString('en-CA')) {
+      const [h, m] = form.time.split(':').map(Number);
+      if ((h * 60 + m) < (now.getHours() * 60 + now.getMinutes())) {
+        return "Time has already passed today.";
+      }
+    }
+
     return null;
   }, [selectedDoctor, form.date, form.time, bookedTimes]);
 
@@ -180,6 +199,17 @@ const AppointmentHandler = () => {
   const handleSubmit = async () => {
     if (!form.patient || !form.doctor || !form.date) {
       toast.warning("Please fill all required fields!");
+      return;
+    }
+
+    const alreadyBooked = appointments.some(a => 
+      a.date.split('T')[0] === form.date && 
+      (a.patientId === form.patientId || a.patient === form.patient) &&
+      a.status !== 'Cancelled'
+    );
+
+    if (alreadyBooked && !rescheduleId) {
+      toast.error(`Appointment already exists for ${form.patient} on this day.`);
       return;
     }
 

@@ -189,10 +189,13 @@ function CancelModal({ appointment, onClose, onConfirm }) {
 }
 
 function ConsultationModal({ appointment, onClose, onSave }) {
+  const isFuture = new Date(appointment.date).setHours(0,0,0,0) > new Date().setHours(0,0,0,0)
+  
   const [form, setForm] = useState({
     consultationMode: appointment.consultationMode || 'Offline',
     meetingLink: appointment.meetingLink || '',
-    doctorNotes: appointment.doctorNotes || ''
+    doctorNotes: appointment.doctorNotes || '',
+    status: appointment.status || 'Scheduled'
   })
   const [submitting, setSubmitting] = useState(false)
   
@@ -200,6 +203,10 @@ function ConsultationModal({ appointment, onClose, onSave }) {
     if (form.consultationMode === 'Online' && !form.meetingLink.trim()) {
       toast.error('Please generate or provide a Meeting Link for online consultation');
       return;
+    }
+    if (form.status === 'Completed' && isFuture) {
+      toast.error('Cannot mark a future appointment as completed')
+      return
     }
     setSubmitting(true)
     await onSave(form)
@@ -225,6 +232,19 @@ function ConsultationModal({ appointment, onClose, onSave }) {
             <div className={`h-8 w-8 rounded-xl flex items-center justify-center ${form.consultationMode === 'Online' ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
               {form.consultationMode === 'Online' ? <Video size={14} /> : <User size={14} />}
             </div>
+          </div>
+
+          <div>
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Mark Status</label>
+            <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 outline-none focus:border-blue-400 transition-all bg-white">
+               {!isFuture && <option value="Completed">Completed</option>}
+               <option value="In Progress">In Progress</option>
+               <option value="Scheduled">Scheduled</option>
+               <option value="Waiting">Waiting</option>
+            </select>
+            {isFuture && form.status === 'Completed' && (
+              <p className="text-[8px] text-rose-500 font-bold mt-1">Status 'Completed' is unavailable for future dates.</p>
+            )}
           </div>
 
           {form.consultationMode === 'Online' && (
@@ -296,8 +316,7 @@ function ActionMenu({ appointment, onView, onMarkComplete, onReschedule, onCance
             <button onClick={() => { setOpen(false); onView(appointment) }} className="w-full flex items-center gap-2 px-4 py-2.5 text-[10px] font-black uppercase text-slate-600 hover:bg-slate-50 border-b">
               <Eye size={12} /> View Details
             </button>
-            {/* Only allow marking completed if appointment date is today or past */}
-            {(status === 'Scheduled' || status === 'Pending' || status === 'In Progress') && (
+            {new Date(appointment.date).setHours(0, 0, 0, 0) === new Date().setHours(0, 0, 0, 0) && appointment.status !== 'Completed' && (
               <button onClick={() => { setOpen(false); onMarkComplete(appointment._id) }} className="w-full flex items-center gap-2 px-4 py-2.5 text-[10px] font-black uppercase text-emerald-600 hover:bg-emerald-50 border-b">
                 <CheckCircle2 size={12} /> Mark Completed
               </button>
